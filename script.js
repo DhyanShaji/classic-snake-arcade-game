@@ -1,3 +1,4 @@
+//code
 /* Solar System Snake: canvas rendering, progression, input, and persistent scoring. */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
