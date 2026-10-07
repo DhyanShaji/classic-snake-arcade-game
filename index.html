@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Snake Game</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for modern retro arcade feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header / Stats Panel -->
+        <header class="game-header">
+            <h1 class="game-title">SNAKE</h1>
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <span class="stat-label">SCORE</span>
+                    <span id="score" class="stat-value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">HIGH SCORE</span>
+                    <span id="high-score" class="stat-value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">LEVEL</span>
+                    <span id="level" class="stat-value">1</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">DIFFICULTY</span>
+                    <span id="difficulty" class="stat-value difficulty-easy">Easy</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Canvas and Overlays Wrapper -->
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+            <!-- Start Screen Overlay -->
+            <div id="startScreen" class="overlay">
+                <div class="overlay-content">
+                    <h2 class="retro-title">SNAKE</h2>
+                    <p class="subtitle">Classic Snake Game</p>
+                    <div class="instructions-box">
+                        <p>🎮 <strong>Arrow Keys / WASD</strong>: Move</p>
+                        <p>⏸️ <strong>P</strong>: Pause / Resume</p>
+                    </div>
+                    <button id="startBtn" class="btn btn-primary">START GAME</button>
+                </div>
+            </div>
+
+            <!-- Pause Screen Overlay -->
+            <div id="pauseScreen" class="overlay hidden">
+                <div class="overlay-content">
+                    <h2 class="retro-title pause-title">PAUSED</h2>
+                    <p class="subtitle">Press <strong>P</strong> to resume</p>
+                    <button id="resumeBtn" class="btn btn-secondary">RESUME</button>
+                </div>
+            </div>
+
+            <!-- Game Over Screen Overlay -->
+            <div id="gameOverScreen" class="overlay hidden">
+                <div class="overlay-content">
+                    <h2 class="retro-title gameover-title">GAME OVER</h2>
+                    <div class="gameover-stats">
+                        <p>Final Score: <span id="finalScore" class="highlight">0</span></p>
+                        <p id="newHighScoreMsg" class="new-highscore hidden">🎉 New High Score! 🎉</p>
+                    </div>
+                    <button id="restartBtn" class="btn btn-primary">RESTART</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- On-Screen Controls for Mobile / Convenience -->
+        <div class="controls-panel">
+            <div class="dpad">
+                <button id="btnUp" class="dpad-btn dpad-up" aria-label="Up">▲</button>
+                <div class="dpad-middle">
+                    <button id="btnLeft" class="dpad-btn dpad-left" aria-label="Left">◀</button>
+                    <button id="btnPause" class="dpad-btn dpad-center" aria-label="Pause">⏸</button>
+                    <button id="btnRight" class="dpad-btn dpad-right" aria-label="Right">▶</button>
+                </div>
+                <button id="btnDown" class="dpad-btn dpad-down" aria-label="Down">▼</button>
+            </div>
+            <p class="controls-hint">Use Arrow keys or WASD to navigate. Press P to Pause.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
