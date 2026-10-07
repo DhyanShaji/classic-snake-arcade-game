@@ -1706,3 +1706,131 @@ body.game-active .game-container {
     .death-particles::after,
     .respawn-counter { animation: none; }
 }
+
+/* Battle Royale fullscreen layout and minimal HUD only */
+body.battle-royale {
+    display: block;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    overflow: hidden;
+}
+
+body.battle-royale .game-container {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--canvas-bg);
+    overflow: hidden;
+}
+
+body.battle-royale .canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+body.battle-royale canvas {
+    width: 100%;
+    height: 100%;
+}
+
+body.battle-royale .brand,
+body.battle-royale #planetIndicator,
+body.battle-royale .planet-route-wrap,
+body.battle-royale .progress-meta,
+body.battle-royale .level-progress-container,
+body.battle-royale .controls-panel,
+body.battle-royale .stats-panel .stat-card:nth-child(1) {
+    display: none;
+}
+
+body.battle-royale .game-header {
+    position: absolute;
+    z-index: 6;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    width: auto;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 9px 5px 5px;
+    border: 1px solid color-mix(in srgb, var(--planet-accent), #344565 74%);
+    border-radius: 7px;
+    background: linear-gradient(135deg, rgba(17, 27, 48, 0.94), rgba(8, 13, 29, 0.96));
+    box-shadow: 0 0 20px color-mix(in srgb, var(--planet-atmosphere), transparent 85%), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+    pointer-events: none;
+}
+
+body.battle-royale .header-top {
+    order: 2;
+    margin: 0 0 0 auto;
+}
+
+body.battle-royale .header-actions {
+    gap: 0;
+}
+
+body.battle-royale .stats-panel {
+    order: 1;
+    display: flex;
+    flex: 1;
+    grid-template-columns: none;
+    gap: 0;
+    min-width: 0;
+}
+
+body.battle-royale .stats-panel .stat-card {
+    min-height: 0;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    align-items: flex-start;
+}
+
+body.battle-royale .stats-panel .stat-card:nth-child(2),
+body.battle-royale .stats-panel .stat-card:nth-child(3) {
+    border-right: 1px solid var(--card-border);
+}
+
+body.battle-royale .menu-trigger {
+    pointer-events: auto;
+}
+
+@media (max-width: 520px) {
+    body.battle-royale {
+        padding: 0;
+    }
+
+    body.battle-royale .game-container {
+        padding: 0;
+    }
+
+    body.battle-royale .game-header {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        padding: 4px 6px;
+    }
+
+    body.battle-royale .stats-panel .stat-card {
+        min-height: 0;
+        padding: 4px 8px;
+    }
+}

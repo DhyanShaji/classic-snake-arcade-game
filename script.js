@@ -46,6 +46,7 @@ const btnPause = document.getElementById('btnPause');
 
 const GRID_SIZE = 20;
 const TILE_COUNT = canvas.width / GRID_SIZE;
+const ARCADE_CANVAS_SIZE = 400;
 const START_SPEED = 210;
 const MAX_SPEED = 80;
 const SPEED_PER_SEGMENT = 4.5;
@@ -130,6 +131,82 @@ const BR_PLANETS = [
     { name: 'NEPTUNE', points: 60, color: '#438dff', atmosphere: '#2764e6', kind: 'neptune' }
 ];
 
+function boardCols() {
+    return Math.floor(canvas.width / GRID_SIZE);
+}
+
+function boardRows() {
+    return Math.floor(canvas.height / GRID_SIZE);
+}
+
+function scatterSpaceField() {
+    stars.forEach((star) => {
+        star.x = Math.random() * canvas.width;
+        star.y = Math.random() * canvas.height;
+    });
+    spaceParticles.forEach((particle) => {
+        particle.x = Math.random() * canvas.width;
+        particle.y = Math.random() * canvas.height;
+    });
+}
+
+function fitBattleRoyaleCanvas() {
+    const wrapper = canvas.parentElement;
+    const width = wrapper && wrapper.clientWidth > 40 ? wrapper.clientWidth : window.innerWidth;
+    const height = wrapper && wrapper.clientHeight > 40 ? wrapper.clientHeight : window.innerHeight;
+    const cols = Math.max(20, Math.floor(width / GRID_SIZE));
+    const rows = Math.max(20, Math.floor(height / GRID_SIZE));
+    const nextWidth = cols * GRID_SIZE;
+    const nextHeight = rows * GRID_SIZE;
+    if (canvas.width === nextWidth && canvas.height === nextHeight) return false;
+    canvas.width = nextWidth;
+    canvas.height = nextHeight;
+    scatterSpaceField();
+    return true;
+}
+
+function restoreArcadeCanvas() {
+    if (canvas.width === ARCADE_CANVAS_SIZE && canvas.height === ARCADE_CANVAS_SIZE) return;
+    canvas.width = ARCADE_CANVAS_SIZE;
+    canvas.height = ARCADE_CANVAS_SIZE;
+    scatterSpaceField();
+}
+
+function clampBattleWorld() {
+    if (!brSnakes.length) return;
+    const cols = boardCols();
+    const rows = boardRows();
+    for (const snakeObj of brSnakes) {
+        for (const segment of snakeObj.snake) {
+            segment.x = Math.max(0, Math.min(cols - 1, segment.x));
+            segment.y = Math.max(0, Math.min(rows - 1, segment.y));
+        }
+        if (snakeObj.previousSnake) {
+            for (const segment of snakeObj.previousSnake) {
+                segment.x = Math.max(0, Math.min(cols - 1, segment.x));
+                segment.y = Math.max(0, Math.min(rows - 1, segment.y));
+            }
+        }
+    }
+    brPlanets = brPlanets.filter((planet) => planet.x >= 0 && planet.x < cols && planet.y >= 0 && planet.y < rows);
+    brDrops = brDrops.filter((drop) => drop.x >= 0 && drop.x < cols && drop.y >= 0 && drop.y < rows);
+    spawnBRPlanets(6);
+}
+
+function battlePhaseLabel() {
+    if (brAliveCount <= 2) return 'FINAL SHOWDOWN';
+    return `PHASE ${Math.min(5, Math.max(1, 8 - brAliveCount))}`;
+}
+
+function onBattleViewportChange() {
+    if (gameMode !== 'battle' || !document.body.classList.contains('battle-royale')) return;
+    const changed = fitBattleRoyaleCanvas();
+    if (!changed) return;
+    if (isRespawning) resetBattleRoyale();
+    else clampBattleWorld();
+    drawBattleRoyale();
+}
+
 function initHighScore() {
     try {
         const savedHighScore = Number(localStorage.getItem('snake_high_score'));
@@ -176,7 +253,7 @@ function startGame() {
 
 function launchBattleRoyale() {
     if (menuHideTimeout !== null) clearTimeout(menuHideTimeout);
-    document.body.classList.add('game-active');
+    document.body.classList.add('game-active', 'battle-royale');
     mainMenu.classList.add('menu-leaving');
     requestFullscreenMode();
     startBattleRoyale();
@@ -191,6 +268,8 @@ function startBattleRoyale() {
     gameOverScreen.classList.add('hidden');
     pauseScreen.classList.add('hidden');
     document.querySelector('.game-container').classList.remove('game-paused');
+    document.body.classList.add('battle-royale');
+    fitBattleRoyaleCanvas();
     resetBattleRoyale();
     isGameRunning = true;
     isPaused = false;
@@ -233,7 +312,8 @@ function exitToMainMenu() {
     respawnScreen.classList.add('hidden');
     startScreen.classList.add('hidden');
     toastBanner.classList.add('hidden');
-    document.body.classList.remove('game-active');
+    document.body.classList.remove('game-active', 'battle-royale');
+    restoreArcadeCanvas();
     mainMenu.classList.remove('hidden', 'menu-leaving');
     battleComingSoon.classList.add('hidden');
     menuHome.classList.remove('hidden');
@@ -243,8 +323,10 @@ function exitToMainMenu() {
 function launchSinglePlayer() {
     if (menuHideTimeout !== null) clearTimeout(menuHideTimeout);
     document.body.classList.add('game-active');
+    document.body.classList.remove('battle-royale');
     mainMenu.classList.add('menu-leaving');
     gameMode = 'single';
+    restoreArcadeCanvas();
     startGame();
     menuHideTimeout = window.setTimeout(() => {
         mainMenu.classList.add('hidden');
@@ -454,6 +536,8 @@ function restartGame() {
     respawnScreen.classList.add('hidden');
     document.querySelector('.game-container').classList.remove('game-paused');
     if (gameMode === 'battle') {
+        document.body.classList.add('battle-royale');
+        fitBattleRoyaleCanvas();
         resetBattleRoyale();
         drawBattleRoyale();
     } else {
@@ -827,13 +911,17 @@ function drawPlanetDust(centerX, centerY, radius, timestamp, color) {
 }
 
 function drawGridLines() {
+    const cols = boardCols();
+    const rows = boardRows();
     ctx.strokeStyle = `rgba(152, 177, 255, ${0.035 + planetProgress() * 0.004})`;
     ctx.lineWidth = 0.5;
-    for (let index = 0; index < TILE_COUNT; index++) {
+    for (let index = 0; index < cols; index++) {
         ctx.beginPath();
         ctx.moveTo(index * GRID_SIZE, 0);
         ctx.lineTo(index * GRID_SIZE, canvas.height);
         ctx.stroke();
+    }
+    for (let index = 0; index < rows; index++) {
         ctx.beginPath();
         ctx.moveTo(0, index * GRID_SIZE);
         ctx.lineTo(canvas.width, index * GRID_SIZE);
@@ -988,8 +1076,10 @@ function spawnBRPlanet() {
     }
 
     const freeCells = [];
-    for (let y = 0; y < TILE_COUNT; y++) {
-        for (let x = 0; x < TILE_COUNT; x++) {
+    const cols = boardCols();
+    const rows = boardRows();
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
             if (!occupied.has(`${x},${y}`)) freeCells.push({ x, y });
         }
     }
@@ -1082,7 +1172,7 @@ function updateBattleRoyale(timestamp = 0) {
         if (!s.isAlive) continue;
         const head = s.snake[0];
 
-        if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+        if (head.x < 0 || head.x >= boardCols() || head.y < 0 || head.y >= boardRows()) {
             dyingSet.add(s.id);
             continue;
         }
@@ -1188,7 +1278,7 @@ function updateBotAI(bot) {
         const nextX = head.x + d.dx;
         const nextY = head.y + d.dy;
 
-        if (nextX < 0 || nextX >= TILE_COUNT || nextY < 0 || nextY >= TILE_COUNT) continue;
+        if (nextX < 0 || nextX >= boardCols() || nextY < 0 || nextY >= boardRows()) continue;
 
         let hitsBody = false;
         for (const s of brSnakes) {
@@ -1268,7 +1358,7 @@ function updateBotAI(bot) {
         for (const d of validDirs) {
             const nx = head.x + d.dx;
             const ny = head.y + d.dy;
-            if (nx >= 0 && nx < TILE_COUNT && ny >= 0 && ny < TILE_COUNT) {
+            if (nx >= 0 && nx < boardCols() && ny >= 0 && ny < boardRows()) {
                 bot.nextDx = d.dx;
                 bot.nextDy = d.dy;
                 break;
@@ -1297,7 +1387,7 @@ function getFloodFillSize(startX, startY, botId) {
 
         for (const n of neighbors) {
             const key = `${n.x},${n.y}`;
-            if (n.x >= 0 && n.x < TILE_COUNT && n.y >= 0 && n.y < TILE_COUNT && !visited.has(key)) {
+            if (n.x >= 0 && n.x < boardCols() && n.y >= 0 && n.y < boardRows() && !visited.has(key)) {
                 visited.add(key);
                 let blocked = false;
                 for (const s of brSnakes) {
@@ -1322,7 +1412,7 @@ function getFloodFillSize(startX, startY, botId) {
 function spawnDeathDrops(snakeObj) {
     for (let i = 0; i < snakeObj.snake.length; i++) {
         const seg = snakeObj.snake[i];
-        if (seg.x >= 0 && seg.x < TILE_COUNT && seg.y >= 0 && seg.y < TILE_COUNT) {
+        if (seg.x >= 0 && seg.x < boardCols() && seg.y >= 0 && seg.y < boardRows()) {
             brDrops.push({
                 x: seg.x,
                 y: seg.y,
@@ -1342,8 +1432,8 @@ function handleSnakeDeath(snakeObj, killerObj, timestamp) {
     if (snakeObj.isPlayer) {
         if (canvas) {
             const boardBounds = canvas.getBoundingClientRect();
-            deathParticles.style.left = `${boardBounds.left + ((snakeObj.snake[0].x + 0.5) / TILE_COUNT) * boardBounds.width}px`;
-            deathParticles.style.top = `${boardBounds.top + ((snakeObj.snake[0].y + 0.5) / TILE_COUNT) * boardBounds.height}px`;
+            deathParticles.style.left = `${boardBounds.left + ((snakeObj.snake[0].x + 0.5) / boardCols()) * boardBounds.width}px`;
+            deathParticles.style.top = `${boardBounds.top + ((snakeObj.snake[0].y + 0.5) / boardRows()) * boardBounds.height}px`;
         }
         showToast('YOU WERE ELIMINATED', 1500, timestamp);
     } else {
@@ -1532,11 +1622,13 @@ function updateUI() {
         const player = (brSnakes && brSnakes[0]) ? brSnakes[0] : { score: 0, snake: [{}, {}, {}], eliminations: 0 };
         scoreEl.textContent = player.score;
         highScoreEl.textContent = `${brAliveCount} / 7`;
-        snakeLengthEl.textContent = player.snake.length;
+        snakeLengthEl.textContent = battlePhaseLabel();
         levelEl.textContent = player.eliminations;
 
         const statLabel2 = document.getElementById('statLabel2');
         if (statLabel2) statLabel2.textContent = 'PLAYERS ALIVE';
+        const statLabel3 = document.getElementById('statLabel3');
+        if (statLabel3) statLabel3.textContent = 'CURRENT PHASE';
         const statLabel4 = document.getElementById('statLabel4');
         if (statLabel4) statLabel4.textContent = 'KILLS';
 
@@ -1565,6 +1657,8 @@ function updateUI() {
 
     const statLabel2 = document.getElementById('statLabel2');
     if (statLabel2) statLabel2.textContent = 'HIGH SCORE';
+    const statLabel3 = document.getElementById('statLabel3');
+    if (statLabel3) statLabel3.textContent = 'LENGTH';
     const statLabel4 = document.getElementById('statLabel4');
     if (statLabel4) statLabel4.textContent = 'LEVEL';
 
@@ -1601,6 +1695,21 @@ function updateUI() {
 }
 
 function gameOver() {
+    const stat2Label = document.getElementById('finalStat2Label');
+    const stat4Label = document.getElementById('finalStat4Label');
+    const titleEl = document.getElementById('gameOverTitle');
+    const eyebrowEl = document.getElementById('gameOverEyebrow');
+    const copyEl = document.getElementById('gameOverCopy');
+    if (stat2Label) stat2Label.textContent = 'PLANET REACHED';
+    if (stat4Label) stat4Label.textContent = 'BEST HIGH SCORE';
+    if (eyebrowEl) eyebrowEl.textContent = 'RUN COMPLETE';
+    if (titleEl) {
+        titleEl.textContent = 'GAME OVER';
+        titleEl.className = 'retro-title gameover-title';
+    }
+    if (copyEl) copyEl.innerHTML = '<span aria-hidden="true">☠</span> YOUR SNAKE HAS BEEN LOST IN SPACE';
+    restartBtn.innerHTML = '<span aria-hidden="true">↻</span> RESPAWN';
+
     isGameRunning = false;
     if (animationFrame !== null) cancelAnimationFrame(animationFrame);
     animationFrame = null;
@@ -1673,6 +1782,8 @@ function respawnGame() {
     pauseScreen.classList.add('hidden');
     startScreen.classList.add('hidden');
     if (gameMode === 'battle') {
+        document.body.classList.add('battle-royale');
+        fitBattleRoyaleCanvas();
         resetBattleRoyale();
         drawBattleRoyale();
     } else {
@@ -1793,6 +1904,8 @@ function setDirection(x, y) {
     }
 }
 
+window.addEventListener('resize', onBattleViewportChange);
+window.addEventListener('fullscreenchange', onBattleViewportChange);
 window.addEventListener('keydown', handleKeyPress);
 singlePlayerBtn.addEventListener('click', launchSinglePlayer);
 battleRoyaleBtn.addEventListener('click', launchBattleRoyale);
