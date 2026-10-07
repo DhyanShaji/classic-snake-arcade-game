@@ -166,6 +166,11 @@ canvas {
     text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }
 
+.victory-title {
+    color: var(--accent-yellow);
+    text-shadow: 0 0 14px rgba(234, 179, 8, 0.7);
+}
+
 .subtitle {
     font-size: 0.9rem;
     color: var(--text-secondary);

@@ -79,7 +79,7 @@
                     <span id="score" class="stat-value highlight-score" aria-live="polite">0</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">HIGH SCORE</span>
+                    <span id="statLabel2" class="stat-label">HIGH SCORE</span>
                     <span id="high-score" class="stat-value">0</span>
                 </div>
                 <div class="stat-card">
@@ -87,7 +87,7 @@
                     <span id="snakeLength" class="stat-value">3</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">LEVEL</span>
+                    <span id="statLabel4" class="stat-label">LEVEL</span>
                     <span id="level" class="stat-value">1</span>
                 </div>
             </div>
@@ -152,9 +152,9 @@
             <div id="gameOverScreen" class="overlay game-over-overlay hidden">
                 <span id="deathParticles" class="death-particles" aria-hidden="true"></span>
                 <div class="overlay-content system-panel death-panel">
-                    <p class="eyebrow">RUN COMPLETE</p>
-                    <h2 class="retro-title gameover-title">GAME OVER</h2>
-                    <p class="death-copy"><span aria-hidden="true">☠</span> YOUR SNAKE HAS BEEN LOST IN SPACE</p>
+                    <p id="gameOverEyebrow" class="eyebrow">RUN COMPLETE</p>
+                    <h2 id="gameOverTitle" class="retro-title gameover-title">GAME OVER</h2>
+                    <p id="gameOverCopy" class="death-copy"><span aria-hidden="true">☠</span> YOUR SNAKE HAS BEEN LOST IN SPACE</p>
 
                     <div id="newHighScoreMsg" class="new-highscore hidden">
                         NEW PERSONAL BEST
@@ -166,7 +166,7 @@
                             <span id="finalScore" class="go-value highlight">0</span>
                         </div>
                         <div class="go-stat">
-                            <span class="go-label">PLANET REACHED</span>
+                            <span id="finalStat2Label" class="go-label">PLANET REACHED</span>
                             <span id="finalPlanet" class="go-value">Earth</span>
                         </div>
                         <div class="go-stat">
@@ -174,7 +174,7 @@
                             <span id="finalLength" class="go-value">3</span>
                         </div>
                         <div class="go-stat">
-                            <span class="go-label">BEST HIGH SCORE</span>
+                            <span id="finalStat4Label" class="go-label">BEST HIGH SCORE</span>
                             <span id="finalHighScore" class="go-value">0</span>
                         </div>
                     </div>

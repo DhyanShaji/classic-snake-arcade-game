@@ -106,6 +106,30 @@ let respawnStartedAt = null;
 let spawnProtectionUntil = 0;
 let menuHideTimeout = null;
 
+let gameMode = 'single';
+let brSnakes = [];
+let brPlanets = [];
+let brDrops = [];
+let brAliveCount = 7;
+
+const BR_BOT_CONFIGS = [
+    { name: 'BOT ALPHA', personality: 'aggressive', color: { head: '#fff2e5', body: '#de6240', accent: '#ff653f' } },
+    { name: 'BOT NOVA', personality: 'collector', color: { head: '#fffce9', body: '#d3a934', accent: '#ffe45c' } },
+    { name: 'BOT TITAN', personality: 'balanced', color: { head: '#f3e8ff', body: '#8a38d9', accent: '#b85eff' } },
+    { name: 'BOT ORION', personality: 'defensive', color: { head: '#f0f5ff', body: '#386ee0', accent: '#438dff' } },
+    { name: 'BOT VORTEX', personality: 'aggressive', color: { head: '#ffe8f8', body: '#c93894', accent: '#ff5ec4' } },
+    { name: 'BOT COSMOS', personality: 'collector', color: { head: '#f0ffff', body: '#26b893', accent: '#5ef2de' } }
+];
+
+const BR_PLANETS = [
+    { name: 'EARTH', points: 10, color: '#70f0df', atmosphere: '#087db8', kind: 'earth' },
+    { name: 'MARS', points: 20, color: '#ff653f', atmosphere: '#d9432d', kind: 'mars' },
+    { name: 'JUPITER', points: 30, color: '#ffb63e', atmosphere: '#ce7e32', kind: 'jupiter' },
+    { name: 'SATURN', points: 40, color: '#ffe45c', atmosphere: '#d9ad43', kind: 'saturn' },
+    { name: 'URANUS', points: 50, color: '#5ef2de', atmosphere: '#45c8d1', kind: 'uranus' },
+    { name: 'NEPTUNE', points: 60, color: '#438dff', atmosphere: '#2764e6', kind: 'neptune' }
+];
+
 function initHighScore() {
     try {
         const savedHighScore = Number(localStorage.getItem('snake_high_score'));
@@ -114,6 +138,27 @@ function initHighScore() {
         highScore = 0;
     }
     highScoreEl.textContent = highScore;
+}
+
+function requestFullscreenMode() {
+    const elem = document.querySelector('.game-container') || document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(() => { });
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        }
+    }
+}
+
+function exitFullscreenMode() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => { });
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
 }
 
 function startGame() {
@@ -126,6 +171,35 @@ function startGame() {
     isGameRunning = true;
     isPaused = false;
     drawGame();
+    runGameLoop();
+}
+
+function launchBattleRoyale() {
+    if (menuHideTimeout !== null) clearTimeout(menuHideTimeout);
+    document.body.classList.add('game-active');
+    mainMenu.classList.add('menu-leaving');
+    requestFullscreenMode();
+    startBattleRoyale();
+    menuHideTimeout = window.setTimeout(() => {
+        mainMenu.classList.add('hidden');
+        menuHideTimeout = null;
+    }, 700);
+}
+
+function startBattleRoyale() {
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    document.querySelector('.game-container').classList.remove('game-paused');
+    resetBattleRoyale();
+    isGameRunning = true;
+    isPaused = false;
+    isRespawning = true;
+    respawnStartedAt = null;
+    respawnMessage.textContent = 'BATTLE ROYALE';
+    respawnCounter.textContent = '3';
+    respawnScreen.classList.remove('hidden');
+    drawBattleRoyale();
     runGameLoop();
 }
 
@@ -142,6 +216,7 @@ function showMainMenu() {
 }
 
 function exitToMainMenu() {
+    exitFullscreenMode();
     if (menuHideTimeout !== null) {
         clearTimeout(menuHideTimeout);
         menuHideTimeout = null;
@@ -169,6 +244,7 @@ function launchSinglePlayer() {
     if (menuHideTimeout !== null) clearTimeout(menuHideTimeout);
     document.body.classList.add('game-active');
     mainMenu.classList.add('menu-leaving');
+    gameMode = 'single';
     startGame();
     menuHideTimeout = window.setTimeout(() => {
         mainMenu.classList.add('hidden');
@@ -194,6 +270,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 }
 
 function resetGameVariables() {
+    gameMode = 'single';
     snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
     dx = 1;
     dy = 0;
@@ -224,15 +301,114 @@ function resetGameVariables() {
     generateFood();
 }
 
+function resetBattleRoyale() {
+    gameMode = 'battle';
+    brAliveCount = 7;
+    brPlanets = [];
+    brDrops = [];
+    toastHideAt = null;
+    toastBanner.classList.add('hidden');
+    changeDirectionLock = false;
+    moveAccumulator = 0;
+    previousFrameTime = 0;
+    pausedDuration = 0;
+    pauseStartedAt = null;
+    isRespawning = false;
+    respawnStartedAt = null;
+    spawnProtectionUntil = 0;
+
+    const initialSpawns = [
+        { headX: 9, headY: 18, dx: 0, dy: -1 },
+        { headX: 5, headY: 1, dx: 0, dy: 1 },
+        { headX: 14, headY: 1, dx: 0, dy: 1 },
+        { headX: 18, headY: 5, dx: -1, dy: 0 },
+        { headX: 18, headY: 14, dx: -1, dy: 0 },
+        { headX: 1, headY: 14, dx: 1, dy: 0 },
+        { headX: 1, headY: 5, dx: 1, dy: 0 }
+    ];
+
+    brSnakes = [];
+
+    const pSpawn = initialSpawns[0];
+    const playerSnakeArr = [
+        { x: pSpawn.headX, y: pSpawn.headY },
+        { x: pSpawn.headX - pSpawn.dx, y: pSpawn.headY - pSpawn.dy },
+        { x: pSpawn.headX - pSpawn.dx * 2, y: pSpawn.headY - pSpawn.dy * 2 }
+    ];
+
+    brSnakes.push({
+        id: 0,
+        name: 'PLAYER',
+        isPlayer: true,
+        isAlive: true,
+        snake: playerSnakeArr,
+        previousSnake: playerSnakeArr.map((s) => ({ ...s })),
+        dx: pSpawn.dx,
+        dy: pSpawn.dy,
+        nextDx: pSpawn.dx,
+        nextDy: pSpawn.dy,
+        score: 0,
+        eliminatedBy: null,
+        eliminations: 0,
+        personality: 'player',
+        color: { head: '#f1ffff', body: '#20c9ac', accent: '#70f0df' }
+    });
+
+    for (let i = 0; i < 6; i++) {
+        const config = BR_BOT_CONFIGS[i];
+        const spawn = initialSpawns[i + 1];
+        const botSnakeArr = [
+            { x: spawn.headX, y: spawn.headY },
+            { x: spawn.headX - spawn.dx, y: spawn.headY - spawn.dy },
+            { x: spawn.headX - spawn.dx * 2, y: spawn.headY - spawn.dy * 2 }
+        ];
+
+        brSnakes.push({
+            id: i + 1,
+            name: config.name,
+            isPlayer: false,
+            isAlive: true,
+            snake: botSnakeArr,
+            previousSnake: botSnakeArr.map((s) => ({ ...s })),
+            dx: spawn.dx,
+            dy: spawn.dy,
+            nextDx: spawn.dx,
+            nextDy: spawn.dy,
+            score: 0,
+            eliminatedBy: null,
+            eliminations: 0,
+            personality: config.personality,
+            color: config.color
+        });
+    }
+
+    snake = brSnakes[0].snake;
+    dx = brSnakes[0].dx;
+    dy = brSnakes[0].dy;
+    nextDx = brSnakes[0].nextDx;
+    nextDy = brSnakes[0].nextDy;
+    score = 0;
+    level = 1;
+    gameSpeed = 230;
+
+    spawnBRPlanets(6);
+    updateUI();
+}
+
 function restartGame() {
     gameOverScreen.classList.add('hidden');
     pauseScreen.classList.add('hidden');
     respawnScreen.classList.add('hidden');
     document.querySelector('.game-container').classList.remove('game-paused');
-    resetGameVariables();
+    if (gameMode === 'battle') {
+        resetBattleRoyale();
+        drawBattleRoyale();
+    } else {
+        resetGameVariables();
+        drawGame();
+    }
     isGameRunning = true;
     isPaused = false;
-    drawGame();
     runGameLoop();
 }
 
@@ -250,7 +426,8 @@ function gameLoopFrame(timestamp) {
     if (isRespawning) {
         previousFrameTime = timestamp;
         updateRespawnCountdown(gameTimestamp);
-        drawGame(0, gameTimestamp);
+        if (gameMode === 'battle') drawBattleRoyale(0, gameTimestamp);
+        else drawGame(0, gameTimestamp);
         if (isGameRunning) animationFrame = requestAnimationFrame(gameLoopFrame);
         return;
     }
@@ -259,21 +436,33 @@ function gameLoopFrame(timestamp) {
     moveAccumulator += Math.min(timestamp - previousFrameTime, 100);
     previousFrameTime = timestamp;
     while (moveAccumulator >= gameSpeed && isGameRunning) {
-        previousSnake = snake.map((segment) => ({ ...segment }));
-        updateGame(gameTimestamp);
+        if (gameMode === 'battle') {
+            updateBattleRoyale(gameTimestamp);
+        } else {
+            previousSnake = snake.map((segment) => ({ ...segment }));
+            updateGame(gameTimestamp);
+        }
         moveAccumulator -= gameSpeed;
         changeDirectionLock = false;
     }
 
     if (isGameRunning) {
-        drawGame(moveAccumulator / gameSpeed, gameTimestamp);
+        if (gameMode === 'battle') {
+            drawBattleRoyale(moveAccumulator / gameSpeed, gameTimestamp);
+        } else {
+            drawGame(moveAccumulator / gameSpeed, gameTimestamp);
+        }
         if (toastHideAt !== null && gameTimestamp >= toastHideAt) {
             toastBanner.classList.add('hidden');
             toastHideAt = null;
         }
         animationFrame = requestAnimationFrame(gameLoopFrame);
     } else {
-        drawGame(1, gameTimestamp);
+        if (gameMode === 'battle') {
+            drawBattleRoyale(1, gameTimestamp);
+        } else {
+            drawGame(1, gameTimestamp);
+        }
     }
 }
 
@@ -724,7 +913,608 @@ function drawFoodBurst(timestamp) {
     ctx.restore();
 }
 
+function spawnBRPlanets(count = 6) {
+    while (brPlanets.length < count) {
+        spawnBRPlanet();
+    }
+}
+
+function spawnBRPlanet() {
+    const occupied = new Set();
+    for (const s of brSnakes) {
+        if (!s.isAlive) continue;
+        for (const seg of s.snake) {
+            occupied.add(`${seg.x},${seg.y}`);
+        }
+    }
+    for (const p of brPlanets) {
+        occupied.add(`${p.x},${p.y}`);
+    }
+    for (const d of brDrops) {
+        occupied.add(`${d.x},${d.y}`);
+    }
+
+    const freeCells = [];
+    for (let y = 0; y < TILE_COUNT; y++) {
+        for (let x = 0; x < TILE_COUNT; x++) {
+            if (!occupied.has(`${x},${y}`)) freeCells.push({ x, y });
+        }
+    }
+
+    if (freeCells.length > 0) {
+        const cell = freeCells[Math.floor(Math.random() * freeCells.length)];
+        const planetType = BR_PLANETS[Math.floor(Math.random() * BR_PLANETS.length)];
+        brPlanets.push({
+            x: cell.x,
+            y: cell.y,
+            name: planetType.name,
+            points: planetType.points,
+            color: planetType.color,
+            atmosphere: planetType.atmosphere,
+            kind: planetType.kind
+        });
+    }
+}
+
+function updateBattleRoyale(timestamp = 0) {
+    if (!isGameRunning || isPaused) return;
+
+    for (let i = 1; i < brSnakes.length; i++) {
+        const bot = brSnakes[i];
+        if (bot.isAlive) {
+            updateBotAI(bot);
+        }
+    }
+
+    for (const s of brSnakes) {
+        if (s.isAlive) {
+            s.previousSnake = s.snake.map((seg) => ({ ...seg }));
+            s.dx = s.nextDx;
+            s.dy = s.nextDy;
+        }
+    }
+
+    for (const s of brSnakes) {
+        if (!s.isAlive) continue;
+        const nextHead = { x: s.snake[0].x + s.dx, y: s.snake[0].y + s.dy };
+        let willGrow = false;
+
+        for (let pIdx = brPlanets.length - 1; pIdx >= 0; pIdx--) {
+            const planetObj = brPlanets[pIdx];
+            if (nextHead.x === planetObj.x && nextHead.y === planetObj.y) {
+                s.score += planetObj.points;
+                willGrow = true;
+                brPlanets.splice(pIdx, 1);
+                spawnBRPlanet();
+                if (s.isPlayer) {
+                    foodBurst = createFoodBurst(planetObj, timestamp);
+                    scorePopup = { x: planetObj.x * GRID_SIZE + GRID_SIZE / 2, y: planetObj.y * GRID_SIZE + GRID_SIZE / 2, start: timestamp, text: `+${planetObj.points}` };
+                    snakeGlowUntil = timestamp + 360;
+                    scoreEl.classList.remove('score-pop');
+                    void scoreEl.offsetWidth;
+                    scoreEl.classList.add('score-pop');
+                }
+                break;
+            }
+        }
+
+        if (!willGrow) {
+            for (let dIdx = brDrops.length - 1; dIdx >= 0; dIdx--) {
+                const dropObj = brDrops[dIdx];
+                if (nextHead.x === dropObj.x && nextHead.y === dropObj.y) {
+                    s.score += dropObj.points;
+                    willGrow = true;
+                    brDrops.splice(dIdx, 1);
+                    if (s.isPlayer) {
+                        snakeGlowUntil = timestamp + 300;
+                        scoreEl.classList.remove('score-pop');
+                        void scoreEl.offsetWidth;
+                        scoreEl.classList.add('score-pop');
+                    }
+                    break;
+                }
+            }
+        }
+
+        s.snake.unshift(nextHead);
+        if (!willGrow) {
+            s.snake.pop();
+        }
+    }
+
+    const dyingSet = new Set();
+    const killers = new Map();
+
+    for (const s of brSnakes) {
+        if (!s.isAlive) continue;
+        const head = s.snake[0];
+
+        if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+            dyingSet.add(s.id);
+            continue;
+        }
+
+        for (let i = 1; i < s.snake.length; i++) {
+            if (head.x === s.snake[i].x && head.y === s.snake[i].y) {
+                dyingSet.add(s.id);
+                break;
+            }
+        }
+    }
+
+    for (const sA of brSnakes) {
+        if (!sA.isAlive || dyingSet.has(sA.id)) continue;
+        const headA = sA.snake[0];
+
+        for (const sB of brSnakes) {
+            if (!sB.isAlive || sA.id === sB.id) continue;
+            for (let i = 1; i < sB.snake.length; i++) {
+                if (headA.x === sB.snake[i].x && headA.y === sB.snake[i].y) {
+                    dyingSet.add(sA.id);
+                    killers.set(sA.id, sB);
+                    break;
+                }
+            }
+        }
+    }
+
+    for (let i = 0; i < brSnakes.length; i++) {
+        const sA = brSnakes[i];
+        if (!sA.isAlive || dyingSet.has(sA.id)) continue;
+        const headA = sA.snake[0];
+        const prevHeadA = sA.previousSnake[0] || headA;
+
+        for (let j = i + 1; j < brSnakes.length; j++) {
+            const sB = brSnakes[j];
+            if (!sB.isAlive || dyingSet.has(sB.id)) continue;
+            const headB = sB.snake[0];
+            const prevHeadB = sB.previousSnake[0] || headB;
+
+            const sameCell = headA.x === headB.x && headA.y === headB.y;
+            const crossMove = headA.x === prevHeadB.x && headA.y === prevHeadB.y && headB.x === prevHeadA.x && headB.y === prevHeadA.y;
+
+            if (sameCell || crossMove) {
+                if (sA.snake.length > sB.snake.length) {
+                    dyingSet.add(sB.id);
+                    sA.eliminations++;
+                    killers.set(sB.id, sA);
+                } else if (sB.snake.length > sA.snake.length) {
+                    dyingSet.add(sA.id);
+                    sB.eliminations++;
+                    killers.set(sA.id, sB);
+                } else {
+                    dyingSet.add(sA.id);
+                    dyingSet.add(sB.id);
+                }
+            }
+        }
+    }
+
+    if (dyingSet.size > 0) {
+        for (const deadId of dyingSet) {
+            const deadSnake = brSnakes[deadId];
+            if (deadSnake && deadSnake.isAlive) {
+                handleSnakeDeath(deadSnake, killers.get(deadId), timestamp);
+            }
+        }
+    }
+
+    level = Math.min(5, Math.max(1, 8 - brAliveCount));
+    gameSpeed = Math.max(130, 230 - (level - 1) * 25);
+
+    if (brSnakes[0]) {
+        score = brSnakes[0].score;
+        snake = brSnakes[0].snake;
+    }
+
+    updateUI();
+
+    const playerDead = !brSnakes[0].isAlive;
+    if (playerDead) {
+        gameOverBattleRoyale(false);
+    } else if (brAliveCount <= 1) {
+        gameOverBattleRoyale(true);
+    }
+}
+
+function updateBotAI(bot) {
+    if (!bot.isAlive) return;
+
+    const head = bot.snake[0];
+    const directions = [
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 }
+    ];
+
+    const validDirs = directions.filter((d) => !(d.dx === -bot.dx && d.dy === -bot.dy));
+    const candidates = [];
+
+    for (const d of validDirs) {
+        const nextX = head.x + d.dx;
+        const nextY = head.y + d.dy;
+
+        if (nextX < 0 || nextX >= TILE_COUNT || nextY < 0 || nextY >= TILE_COUNT) continue;
+
+        let hitsBody = false;
+        for (const s of brSnakes) {
+            if (!s.isAlive) continue;
+            const checkLength = s.snake.length - 1;
+            for (let i = 0; i < checkLength; i++) {
+                if (s.snake[i].x === nextX && s.snake[i].y === nextY) {
+                    hitsBody = true;
+                    break;
+                }
+            }
+            if (hitsBody) break;
+        }
+        if (hitsBody) continue;
+
+        let headRisk = 0;
+        for (const s of brSnakes) {
+            if (!s.isAlive || s.id === bot.id) continue;
+            const enemyHead = s.snake[0];
+            const dist = Math.abs(enemyHead.x - nextX) + Math.abs(enemyHead.y - nextY);
+            if (dist <= 1 && s.snake.length >= bot.snake.length) {
+                headRisk += bot.personality === 'defensive' ? 50 : 25;
+            }
+        }
+
+        const openSpace = getFloodFillSize(nextX, nextY, bot.id);
+        if (openSpace < Math.min(bot.snake.length, 5)) {
+            headRisk += 40;
+        }
+
+        let closestDist = 999;
+        let targetPoints = 10;
+
+        for (const p of brPlanets) {
+            const dDist = Math.abs(p.x - nextX) + Math.abs(p.y - nextY);
+            if (dDist < closestDist) {
+                closestDist = dDist;
+                targetPoints = p.points;
+            }
+        }
+
+        for (const dr of brDrops) {
+            const dDist = Math.abs(dr.x - nextX) + Math.abs(dr.y - nextY);
+            if (dDist < closestDist) {
+                closestDist = dDist;
+                targetPoints = dr.points;
+            }
+        }
+
+        let scoreVal = 100 - closestDist * 5 + targetPoints - headRisk + openSpace * 2;
+
+        if (bot.personality === 'aggressive') {
+            for (const s of brSnakes) {
+                if (!s.isAlive || s.id === bot.id) continue;
+                if (s.snake.length < bot.snake.length) {
+                    const eHead = s.snake[0];
+                    const eDist = Math.abs(eHead.x - nextX) + Math.abs(eHead.y - nextY);
+                    if (eDist < 5) scoreVal += 15 - eDist * 2;
+                }
+            }
+        } else if (bot.personality === 'collector') {
+            scoreVal += targetPoints * 0.5;
+        }
+
+        candidates.push({ dir: d, score: scoreVal });
+    }
+
+    if (candidates.length > 0) {
+        candidates.sort((a, b) => b.score - a.score);
+        let chosen = candidates[0];
+        if (candidates.length > 1 && Math.random() < 0.1) {
+            chosen = candidates[1];
+        }
+        bot.nextDx = chosen.dir.dx;
+        bot.nextDy = chosen.dir.dy;
+    } else {
+        for (const d of validDirs) {
+            const nx = head.x + d.dx;
+            const ny = head.y + d.dy;
+            if (nx >= 0 && nx < TILE_COUNT && ny >= 0 && ny < TILE_COUNT) {
+                bot.nextDx = d.dx;
+                bot.nextDy = d.dy;
+                break;
+            }
+        }
+    }
+}
+
+function getFloodFillSize(startX, startY, botId) {
+    const visited = new Set();
+    const queue = [{ x: startX, y: startY }];
+    visited.add(`${startX},${startY}`);
+    let count = 0;
+    const maxCheck = 15;
+
+    while (queue.length > 0 && count < maxCheck) {
+        const current = queue.shift();
+        count++;
+
+        const neighbors = [
+            { x: current.x + 1, y: current.y },
+            { x: current.x - 1, y: current.y },
+            { x: current.x, y: current.y + 1 },
+            { x: current.x, y: current.y - 1 }
+        ];
+
+        for (const n of neighbors) {
+            const key = `${n.x},${n.y}`;
+            if (n.x >= 0 && n.x < TILE_COUNT && n.y >= 0 && n.y < TILE_COUNT && !visited.has(key)) {
+                visited.add(key);
+                let blocked = false;
+                for (const s of brSnakes) {
+                    if (!s.isAlive) continue;
+                    for (let i = 0; i < s.snake.length - 1; i++) {
+                        if (s.snake[i].x === n.x && s.snake[i].y === n.y) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                    if (blocked) break;
+                }
+                if (!blocked) {
+                    queue.push(n);
+                }
+            }
+        }
+    }
+    return count;
+}
+
+function spawnDeathDrops(snakeObj) {
+    for (let i = 0; i < snakeObj.snake.length; i++) {
+        const seg = snakeObj.snake[i];
+        if (seg.x >= 0 && seg.x < TILE_COUNT && seg.y >= 0 && seg.y < TILE_COUNT) {
+            brDrops.push({
+                x: seg.x,
+                y: seg.y,
+                points: 10,
+                color: snakeObj.color.accent || '#ff70df'
+            });
+        }
+    }
+    if (brDrops.length > 40) brDrops.splice(0, brDrops.length - 40);
+}
+
+function handleSnakeDeath(snakeObj, killerObj, timestamp) {
+    snakeObj.isAlive = false;
+    brAliveCount = Math.max(0, brAliveCount - 1);
+    spawnDeathDrops(snakeObj);
+
+    if (snakeObj.isPlayer) {
+        if (canvas) {
+            const boardBounds = canvas.getBoundingClientRect();
+            deathParticles.style.left = `${boardBounds.left + ((snakeObj.snake[0].x + 0.5) / TILE_COUNT) * boardBounds.width}px`;
+            deathParticles.style.top = `${boardBounds.top + ((snakeObj.snake[0].y + 0.5) / TILE_COUNT) * boardBounds.height}px`;
+        }
+        showToast('YOU WERE ELIMINATED', 1500, timestamp);
+    } else {
+        const killedByPlayer = killerObj && killerObj.isPlayer;
+        if (killedByPlayer) {
+            brSnakes[0].eliminations++;
+            showToast('KILL +1', 1200, timestamp);
+        } else {
+            showToast('BOT ELIMINATED', 1200, timestamp);
+        }
+    }
+}
+
+function gameOverBattleRoyale(playerWon) {
+    isGameRunning = false;
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    isPaused = false;
+    isRespawning = false;
+    pauseScreen.classList.add('hidden');
+    respawnScreen.classList.add('hidden');
+
+    const player = brSnakes[0] || { score: 0, snake: [{}, {}, {}], eliminations: 0 };
+    finalScoreEl.textContent = player.score;
+    finalLengthEl.textContent = player.snake.length;
+
+    const eyebrowEl = document.getElementById('gameOverEyebrow');
+    const titleEl = document.getElementById('gameOverTitle');
+    const copyEl = document.getElementById('gameOverCopy');
+    const stat2Label = document.getElementById('finalStat2Label');
+    const stat4Label = document.getElementById('finalStat4Label');
+
+    if (playerWon) {
+        if (eyebrowEl) eyebrowEl.textContent = 'BATTLE ROYALE COMPLETE';
+        if (titleEl) {
+            titleEl.textContent = 'VICTORY!';
+            titleEl.className = 'retro-title victory-title';
+        }
+        if (copyEl) copyEl.innerHTML = '<span aria-hidden="true">👑</span> YOU ARE THE LAST SNAKE STANDING';
+        if (stat2Label) stat2Label.textContent = 'KILLS';
+        finalPlanetEl.textContent = player.eliminations;
+        if (stat4Label) stat4Label.textContent = 'PLAYERS ALIVE';
+        finalHighScoreEl.textContent = '1 / 7';
+        restartBtn.innerHTML = '<span aria-hidden="true">↻</span> PLAY AGAIN';
+    } else {
+        if (eyebrowEl) eyebrowEl.textContent = 'BATTLE ROYALE';
+        if (titleEl) {
+            titleEl.textContent = 'ELIMINATED';
+            titleEl.className = 'retro-title gameover-title';
+        }
+        if (copyEl) copyEl.innerHTML = '<span aria-hidden="true">☠</span> YOUR SNAKE WAS ELIMINATED IN SPACE';
+        if (stat2Label) stat2Label.textContent = 'KILLS';
+        finalPlanetEl.textContent = player.eliminations;
+        if (stat4Label) stat4Label.textContent = 'PLAYERS ALIVE';
+        finalHighScoreEl.textContent = `${brAliveCount} / 7`;
+        restartBtn.innerHTML = '<span aria-hidden="true">↻</span> PLAY AGAIN';
+    }
+
+    newHighScoreMsg.classList.add('hidden');
+    gameOverScreen.classList.remove('hidden');
+    restartBtn.focus();
+}
+
+function drawBattleRoyale(progress = 1, timestamp = 0) {
+    drawSolarEnvironment(timestamp);
+    drawGridLines();
+    drawBattleRoyalePlanets(timestamp);
+    drawBattleRoyaleDrops(timestamp);
+    drawBattleRoyaleSnakes(progress, timestamp);
+    drawFoodBurst(timestamp);
+}
+
+function drawBattleRoyalePlanets(timestamp = 0) {
+    for (const p of brPlanets) {
+        const centerX = p.x * GRID_SIZE + GRID_SIZE / 2;
+        const centerY = p.y * GRID_SIZE + GRID_SIZE / 2;
+        const pulse = 1 + Math.sin(timestamp * 0.005 + p.x * 3) * 0.08;
+        const accent = p.color;
+
+        ctx.save();
+        ctx.shadowColor = accent;
+        ctx.shadowBlur = 18;
+
+        ctx.strokeStyle = `${accent}bb`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 8.5 * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const core = ctx.createRadialGradient(centerX - 2, centerY - 2, 0.5, centerX, centerY, 7.5 * pulse);
+        core.addColorStop(0, '#ffffff');
+        core.addColorStop(0.35, accent);
+        core.addColorStop(1, p.atmosphere || accent);
+        ctx.fillStyle = core;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 7.5 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+function drawBattleRoyaleDrops(timestamp = 0) {
+    for (const d of brDrops) {
+        const centerX = d.x * GRID_SIZE + GRID_SIZE / 2;
+        const centerY = d.y * GRID_SIZE + GRID_SIZE / 2;
+        const pulse = 1 + Math.sin(timestamp * 0.008 + d.x * 2 + d.y) * 0.12;
+
+        ctx.save();
+        ctx.shadowColor = d.color;
+        ctx.shadowBlur = 12;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 3.5 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = d.color;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 5.5 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+function drawBattleRoyaleSnakes(progress = 1, timestamp = 0) {
+    for (const sObj of brSnakes) {
+        if (!sObj.isAlive) continue;
+        const protectedSpawn = isRespawning || timestamp < spawnProtectionUntil;
+        const shieldAlpha = 0.58 + (Math.sin(timestamp * 0.012) + 1) * 0.12;
+
+        sObj.snake.forEach((segment, index) => {
+            const isHead = index === 0;
+            const priorSegment = sObj.previousSnake[index] || segment;
+            const x = (priorSegment.x + (segment.x - priorSegment.x) * progress) * GRID_SIZE;
+            const y = (priorSegment.y + (segment.y - priorSegment.y) * progress) * GRID_SIZE;
+
+            ctx.globalAlpha = (index >= sObj.previousSnake.length ? Math.min(1, progress * 2) : 1) * (protectedSpawn ? shieldAlpha : 1);
+            ctx.fillStyle = isHead ? sObj.color.head : sObj.color.body;
+            ctx.shadowColor = protectedSpawn ? '#b5f4ff' : sObj.color.accent;
+            ctx.shadowBlur = sObj.isPlayer
+                ? protectedSpawn ? (isHead ? 30 : 18) : (timestamp < snakeGlowUntil ? (isHead ? 28 : 16) : (isHead ? 18 : 8))
+                : (isHead ? 10 : 4);
+
+            ctx.beginPath();
+            ctx.roundRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2, 6);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if (isHead) {
+                ctx.fillStyle = '#081020';
+                const eyeSize = 3;
+                let eye1X, eye1Y, eye2X, eye2Y;
+                if (sObj.dx === 1) {
+                    eye1X = x + 13; eye1Y = y + 4; eye2X = x + 13; eye2Y = y + 13;
+                } else if (sObj.dx === -1) {
+                    eye1X = x + 4; eye1Y = y + 4; eye2X = x + 4; eye2Y = y + 13;
+                } else if (sObj.dy === -1) {
+                    eye1X = x + 4; eye1Y = y + 4; eye2X = x + 13; eye2Y = y + 4;
+                } else {
+                    eye1X = x + 4; eye1Y = y + 13; eye2X = x + 13; eye2Y = y + 13;
+                }
+                ctx.fillRect(eye1X, eye1Y, eyeSize, eyeSize);
+                ctx.fillRect(eye2X, eye2Y, eyeSize, eyeSize);
+
+                if (sObj.isPlayer) {
+                    ctx.save();
+                    ctx.fillStyle = '#70f0df';
+                    ctx.shadowColor = '#70f0df';
+                    ctx.shadowBlur = 8;
+                    ctx.font = '800 9px Outfit, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('YOU', x + GRID_SIZE / 2, y - 4);
+                    ctx.restore();
+                }
+            }
+            ctx.globalAlpha = 1;
+        });
+    }
+}
+
 function updateUI() {
+    if (gameMode === 'battle') {
+        const player = (brSnakes && brSnakes[0]) ? brSnakes[0] : { score: 0, snake: [{}, {}, {}], eliminations: 0 };
+        scoreEl.textContent = player.score;
+        highScoreEl.textContent = `${brAliveCount} / 7`;
+        snakeLengthEl.textContent = player.snake.length;
+        levelEl.textContent = player.eliminations;
+
+        const statLabel2 = document.getElementById('statLabel2');
+        if (statLabel2) statLabel2.textContent = 'PLAYERS ALIVE';
+        const statLabel4 = document.getElementById('statLabel4');
+        if (statLabel4) statLabel4.textContent = 'KILLS';
+
+        planetNameEl.textContent = 'BATTLE ROYALE';
+        planetDifficultyEl.textContent = `${brAliveCount} ALIVE`;
+        const visualClass = 'planet-visual planet-saturn';
+        if (planetVisualEl.className !== visualClass) {
+            planetVisualEl.className = visualClass;
+        }
+        planetVisualEl.setAttribute('aria-label', 'Battle Royale Arena');
+
+        const activeStep = Math.min(5, Math.max(0, 7 - brAliveCount));
+        planetSteps.forEach((step, index) => {
+            step.classList.toggle('visited', index < activeStep);
+            step.classList.toggle('active', index === activeStep);
+            if (index === activeStep) step.setAttribute('aria-current', 'step');
+            else step.removeAttribute('aria-current');
+        });
+
+        const progress = Math.min(100, Math.round(((7 - brAliveCount) / 6) * 100));
+        levelProgressBar.style.width = `${progress}%`;
+        levelProgressBar.parentElement.setAttribute('aria-valuenow', progress);
+        nextLevelLabel.textContent = brAliveCount > 1 ? `${brAliveCount} REMAINING` : 'FINAL SHOWDOWN';
+        return;
+    }
+
+    const statLabel2 = document.getElementById('statLabel2');
+    if (statLabel2) statLabel2.textContent = 'HIGH SCORE';
+    const statLabel4 = document.getElementById('statLabel4');
+    if (statLabel4) statLabel4.textContent = 'LEVEL';
+
     scoreEl.textContent = score;
     highScoreEl.textContent = highScore;
     snakeLengthEl.textContent = snake.length;
@@ -829,7 +1619,13 @@ function respawnGame() {
     gameOverScreen.classList.add('hidden');
     pauseScreen.classList.add('hidden');
     startScreen.classList.add('hidden');
-    resetGameVariables();
+    if (gameMode === 'battle') {
+        resetBattleRoyale();
+        drawBattleRoyale();
+    } else {
+        resetGameVariables();
+        drawGame();
+    }
     isGameRunning = true;
     isPaused = false;
     isRespawning = true;
@@ -837,7 +1633,6 @@ function respawnGame() {
     respawnMessage.textContent = 'RESPAWNING...';
     respawnCounter.textContent = '3';
     respawnScreen.classList.remove('hidden');
-    drawGame();
     runGameLoop();
 }
 
@@ -885,37 +1680,69 @@ function handleKeyPress(event) {
     switch (event.code) {
         case 'ArrowUp':
         case 'KeyW':
-            if (dy === 0) queueDirection(0, -1);
+            if (gameMode === 'battle') {
+                if (brSnakes[0] && brSnakes[0].dy === 0) queueDirection(0, -1);
+            } else {
+                if (dy === 0) queueDirection(0, -1);
+            }
             break;
         case 'ArrowDown':
         case 'KeyS':
-            if (dy === 0) queueDirection(0, 1);
+            if (gameMode === 'battle') {
+                if (brSnakes[0] && brSnakes[0].dy === 0) queueDirection(0, 1);
+            } else {
+                if (dy === 0) queueDirection(0, 1);
+            }
             break;
         case 'ArrowLeft':
         case 'KeyA':
-            if (dx === 0) queueDirection(-1, 0);
+            if (gameMode === 'battle') {
+                if (brSnakes[0] && brSnakes[0].dx === 0) queueDirection(-1, 0);
+            } else {
+                if (dx === 0) queueDirection(-1, 0);
+            }
             break;
         case 'ArrowRight':
         case 'KeyD':
-            if (dx === 0) queueDirection(1, 0);
+            if (gameMode === 'battle') {
+                if (brSnakes[0] && brSnakes[0].dx === 0) queueDirection(1, 0);
+            } else {
+                if (dx === 0) queueDirection(1, 0);
+            }
             break;
     }
 }
 
 function queueDirection(x, y) {
-    nextDx = x;
-    nextDy = y;
-    changeDirectionLock = true;
+    if (gameMode === 'battle') {
+        if (brSnakes.length > 0 && brSnakes[0].isAlive) {
+            const p = brSnakes[0];
+            p.nextDx = x;
+            p.nextDy = y;
+            changeDirectionLock = true;
+        }
+    } else {
+        nextDx = x;
+        nextDy = y;
+        changeDirectionLock = true;
+    }
 }
 
 function setDirection(x, y) {
     if (!isGameRunning || isPaused || isRespawning || changeDirectionLock) return;
-    if ((x !== 0 && dx === 0) || (y !== 0 && dy === 0)) queueDirection(x, y);
+    if (gameMode === 'battle') {
+        if (brSnakes.length > 0 && brSnakes[0].isAlive) {
+            const p = brSnakes[0];
+            if ((x !== 0 && p.dx === 0) || (y !== 0 && p.dy === 0)) queueDirection(x, y);
+        }
+    } else {
+        if ((x !== 0 && dx === 0) || (y !== 0 && dy === 0)) queueDirection(x, y);
+    }
 }
 
 window.addEventListener('keydown', handleKeyPress);
 singlePlayerBtn.addEventListener('click', launchSinglePlayer);
-battleRoyaleBtn.addEventListener('click', showBattleRoyale);
+battleRoyaleBtn.addEventListener('click', launchBattleRoyale);
 menuBackBtn.addEventListener('click', showMainMenu);
 headerPauseBtn.addEventListener('click', togglePause);
 startBtn.addEventListener('click', startGame);
