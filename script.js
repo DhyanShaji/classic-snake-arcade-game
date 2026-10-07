@@ -301,6 +301,58 @@ function resetGameVariables() {
     generateFood();
 }
 
+function createBRSpawnCandidate(edge) {
+    const columns = Math.floor(canvas.width / GRID_SIZE);
+    const rows = Math.floor(canvas.height / GRID_SIZE);
+    const position = 1 + Math.floor(Math.random() * (Math.min(columns, rows) - 2));
+
+    if (edge === 'top') return { headX: position, headY: 2, dx: 0, dy: 1 };
+    if (edge === 'bottom') return { headX: position, headY: rows - 3, dx: 0, dy: -1 };
+    if (edge === 'left') return { headX: 2, headY: position, dx: 1, dy: 0 };
+    return { headX: columns - 3, headY: position, dx: -1, dy: 0 };
+}
+
+function isSafeBRSpawn(spawn) {
+    const spawnSnake = Array.from({ length: 3 }, (_, index) => ({
+        x: spawn.headX - spawn.dx * index,
+        y: spawn.headY - spawn.dy * index
+    }));
+    const columns = Math.floor(canvas.width / GRID_SIZE);
+    const rows = Math.floor(canvas.height / GRID_SIZE);
+    if (spawnSnake.some((segment) => segment.x < 0 || segment.x >= columns || segment.y < 0 || segment.y >= rows)) return false;
+
+    const minimumDistance = Math.max(GRID_SIZE * 2.5, Math.min(canvas.width, canvas.height) * 0.12);
+    const minimumDistanceSquared = minimumDistance ** 2;
+    for (const existing of brSnakes) {
+        for (const segment of spawnSnake) {
+            for (const occupied of existing.snake) {
+                const distanceX = (segment.x - occupied.x) * GRID_SIZE;
+                const distanceY = (segment.y - occupied.y) * GRID_SIZE;
+                if (distanceX ** 2 + distanceY ** 2 < minimumDistanceSquared) return false;
+            }
+        }
+    }
+
+    for (const planet of brPlanets) {
+        for (const segment of spawnSnake) {
+            const distanceX = segment.x - planet.x;
+            const distanceY = segment.y - planet.y;
+            if (distanceX ** 2 + distanceY ** 2 < 2.25) return false;
+        }
+    }
+
+    return true;
+}
+
+function createSafeBRSpawn(edge) {
+    const maxAttempts = 1000;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const spawn = createBRSpawnCandidate(edge);
+        if (isSafeBRSpawn(spawn)) return spawn;
+    }
+    throw new Error(`Unable to find a safe Battle Royale spawn along the ${edge} edge`);
+}
+
 function resetBattleRoyale() {
     gameMode = 'battle';
     brAliveCount = 7;
@@ -317,19 +369,21 @@ function resetBattleRoyale() {
     respawnStartedAt = null;
     spawnProtectionUntil = 0;
 
-    const initialSpawns = [
-        { headX: 9, headY: 18, dx: 0, dy: -1 },
-        { headX: 5, headY: 1, dx: 0, dy: 1 },
-        { headX: 14, headY: 1, dx: 0, dy: 1 },
-        { headX: 18, headY: 5, dx: -1, dy: 0 },
-        { headX: 18, headY: 14, dx: -1, dy: 0 },
-        { headX: 1, headY: 14, dx: 1, dy: 0 },
-        { headX: 1, headY: 5, dx: 1, dy: 0 }
-    ];
-
     brSnakes = [];
+    spawnBRPlanets(6);
 
-    const pSpawn = initialSpawns[0];
+    const spawnEdges = ['top', 'right', 'bottom', 'left'];
+    for (let index = spawnEdges.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [spawnEdges[index], spawnEdges[swapIndex]] = [spawnEdges[swapIndex], spawnEdges[index]];
+    }
+    const matchEdges = Array.from({ length: 7 }, (_, index) => spawnEdges[index % spawnEdges.length]);
+    for (let index = matchEdges.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [matchEdges[index], matchEdges[swapIndex]] = [matchEdges[swapIndex], matchEdges[index]];
+    }
+
+    const pSpawn = createSafeBRSpawn(matchEdges[0]);
     const playerSnakeArr = [
         { x: pSpawn.headX, y: pSpawn.headY },
         { x: pSpawn.headX - pSpawn.dx, y: pSpawn.headY - pSpawn.dy },
@@ -356,7 +410,7 @@ function resetBattleRoyale() {
 
     for (let i = 0; i < 6; i++) {
         const config = BR_BOT_CONFIGS[i];
-        const spawn = initialSpawns[i + 1];
+        const spawn = createSafeBRSpawn(matchEdges[i + 1]);
         const botSnakeArr = [
             { x: spawn.headX, y: spawn.headY },
             { x: spawn.headX - spawn.dx, y: spawn.headY - spawn.dy },
@@ -391,7 +445,6 @@ function resetBattleRoyale() {
     level = 1;
     gameSpeed = 230;
 
-    spawnBRPlanets(6);
     updateUI();
 }
 
