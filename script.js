@@ -12,16 +12,29 @@ const planetDifficultyEl = document.getElementById('planetDifficulty');
 const planetVisualEl = document.getElementById('planetVisual');
 const planetSteps = Array.from({ length: 6 }, (_, index) => document.getElementById(`planet-step-${index}`));
 const startScreen = document.getElementById('startScreen');
+const mainMenu = document.getElementById('mainMenu');
+const menuHome = document.getElementById('menuHome');
+const battleComingSoon = document.getElementById('battleComingSoon');
+const singlePlayerBtn = document.getElementById('singlePlayerBtn');
+const battleRoyaleBtn = document.getElementById('battleRoyaleBtn');
+const menuBackBtn = document.getElementById('menuBackBtn');
 const pauseScreen = document.getElementById('pauseScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
+const respawnScreen = document.getElementById('respawnScreen');
 const startBtn = document.getElementById('startBtn');
 const resumeBtn = document.getElementById('resumeBtn');
+const pauseRestartBtn = document.getElementById('pauseRestartBtn');
+const pauseMainMenuBtn = document.getElementById('pauseMainMenuBtn');
 const restartBtn = document.getElementById('restartBtn');
+const gameOverMainMenuBtn = document.getElementById('gameOverMainMenuBtn');
+const respawnMessage = document.getElementById('respawnMessage');
+const respawnCounter = document.getElementById('respawnCounter');
 const finalScoreEl = document.getElementById('finalScore');
 const finalLengthEl = document.getElementById('finalLength');
-const finalLevelEl = document.getElementById('finalLevel');
+const finalPlanetEl = document.getElementById('finalPlanet');
 const finalHighScoreEl = document.getElementById('finalHighScore');
 const newHighScoreMsg = document.getElementById('newHighScoreMsg');
+const deathParticles = document.getElementById('deathParticles');
 const toastBanner = document.getElementById('toastBanner');
 const headerPauseBtn = document.getElementById('headerPauseBtn');
 const btnUp = document.getElementById('btnUp');
@@ -77,7 +90,7 @@ let previousFrameTime = 0;
 let moveAccumulator = 0;
 let previousSnake = [];
 let changeDirectionLock = false;
-let toastTimeout = null;
+let toastHideAt = null;
 let achievedHighScore = false;
 let planetTransitionFrom = 0;
 let planetTransitionTo = 0;
@@ -85,6 +98,12 @@ let planetTransitionStart = null;
 let foodBurst = null;
 let scorePopup = null;
 let snakeGlowUntil = 0;
+let pausedDuration = 0;
+let pauseStartedAt = null;
+let isRespawning = false;
+let respawnStartedAt = null;
+let spawnProtectionUntil = 0;
+let menuHideTimeout = null;
 
 function initHighScore() {
     try {
@@ -100,11 +119,77 @@ function startGame() {
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
     pauseScreen.classList.add('hidden');
+    respawnScreen.classList.add('hidden');
+    document.querySelector('.game-container').classList.remove('game-paused');
     resetGameVariables();
     isGameRunning = true;
     isPaused = false;
     drawGame();
     runGameLoop();
+}
+
+function showBattleRoyale() {
+    menuHome.classList.add('hidden');
+    battleComingSoon.classList.remove('hidden');
+    menuBackBtn.focus();
+}
+
+function showMainMenu() {
+    battleComingSoon.classList.add('hidden');
+    menuHome.classList.remove('hidden');
+    battleRoyaleBtn.focus();
+}
+
+function exitToMainMenu() {
+    if (menuHideTimeout !== null) {
+        clearTimeout(menuHideTimeout);
+        menuHideTimeout = null;
+    }
+    isGameRunning = false;
+    isPaused = false;
+    isRespawning = false;
+    pauseStartedAt = null;
+    document.querySelector('.game-container').classList.remove('game-paused');
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    pauseScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    respawnScreen.classList.add('hidden');
+    startScreen.classList.add('hidden');
+    toastBanner.classList.add('hidden');
+    document.body.classList.remove('game-active');
+    mainMenu.classList.remove('hidden', 'menu-leaving');
+    battleComingSoon.classList.add('hidden');
+    menuHome.classList.remove('hidden');
+    singlePlayerBtn.focus();
+}
+
+function launchSinglePlayer() {
+    if (menuHideTimeout !== null) clearTimeout(menuHideTimeout);
+    document.body.classList.add('game-active');
+    mainMenu.classList.add('menu-leaving');
+    startGame();
+    menuHideTimeout = window.setTimeout(() => {
+        mainMenu.classList.add('hidden');
+        menuHideTimeout = null;
+    }, 700);
+}
+
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    mainMenu.addEventListener('pointermove', (event) => {
+        const offsetX = (event.clientX / window.innerWidth - 0.5) * 10;
+        const offsetY = (event.clientY / window.innerHeight - 0.5) * 10;
+        mainMenu.style.setProperty('--menu-parallax-x', `${offsetX}px`);
+        mainMenu.style.setProperty('--menu-parallax-y', `${offsetY}px`);
+        mainMenu.style.setProperty('--menu-parallax-x-soft', `${offsetX * -0.38}px`);
+        mainMenu.style.setProperty('--menu-parallax-y-soft', `${offsetY * -0.38}px`);
+    });
+    mainMenu.addEventListener('pointerleave', () => {
+        mainMenu.style.setProperty('--menu-parallax-x', '0px');
+        mainMenu.style.setProperty('--menu-parallax-y', '0px');
+        mainMenu.style.setProperty('--menu-parallax-x-soft', '0px');
+        mainMenu.style.setProperty('--menu-parallax-y-soft', '0px');
+    });
 }
 
 function resetGameVariables() {
@@ -123,6 +208,13 @@ function resetGameVariables() {
     foodBurst = null;
     scorePopup = null;
     snakeGlowUntil = 0;
+    pausedDuration = 0;
+    pauseStartedAt = null;
+    isRespawning = false;
+    respawnStartedAt = null;
+    spawnProtectionUntil = 0;
+    toastHideAt = null;
+    toastBanner.classList.add('hidden');
     changeDirectionLock = false;
     moveAccumulator = 0;
     previousFrameTime = 0;
@@ -134,6 +226,8 @@ function resetGameVariables() {
 function restartGame() {
     gameOverScreen.classList.add('hidden');
     pauseScreen.classList.add('hidden');
+    respawnScreen.classList.add('hidden');
+    document.querySelector('.game-container').classList.remove('game-paused');
     resetGameVariables();
     isGameRunning = true;
     isPaused = false;
@@ -149,10 +243,14 @@ function runGameLoop() {
 
 function gameLoopFrame(timestamp) {
     if (!isGameRunning) return;
-    if (isPaused) {
-        drawGame(moveAccumulator / gameSpeed, timestamp);
+    if (isPaused) return;
+
+    const gameTimestamp = timestamp - pausedDuration;
+    if (isRespawning) {
         previousFrameTime = timestamp;
-        animationFrame = requestAnimationFrame(gameLoopFrame);
+        updateRespawnCountdown(gameTimestamp);
+        drawGame(0, gameTimestamp);
+        if (isGameRunning) animationFrame = requestAnimationFrame(gameLoopFrame);
         return;
     }
 
@@ -161,16 +259,20 @@ function gameLoopFrame(timestamp) {
     previousFrameTime = timestamp;
     while (moveAccumulator >= gameSpeed && isGameRunning) {
         previousSnake = snake.map((segment) => ({ ...segment }));
-        updateGame(timestamp);
+        updateGame(gameTimestamp);
         moveAccumulator -= gameSpeed;
         changeDirectionLock = false;
     }
 
     if (isGameRunning) {
-        drawGame(moveAccumulator / gameSpeed, timestamp);
+        drawGame(moveAccumulator / gameSpeed, gameTimestamp);
+        if (toastHideAt !== null && gameTimestamp >= toastHideAt) {
+            toastBanner.classList.add('hidden');
+            toastHideAt = null;
+        }
         animationFrame = requestAnimationFrame(gameLoopFrame);
     } else {
-        drawGame(1, timestamp);
+        drawGame(1, gameTimestamp);
     }
 }
 
@@ -180,6 +282,7 @@ function updateGame(timestamp = 0) {
     const nextHead = { x: snake[0].x + dx, y: snake[0].y + dy };
     const willGrow = nextHead.x === food.x && nextHead.y === food.y;
     if (checkCollision(nextHead, willGrow)) {
+        if (timestamp < spawnProtectionUntil) return;
         gameOver();
         return;
     }
@@ -499,15 +602,17 @@ function drawSnake(progress = 1, timestamp = 0) {
     const accent = planetColor('accent', timestamp);
     const body = planetColor('body', timestamp);
     const head = planetColor('head', timestamp);
+    const protectedSpawn = isRespawning || timestamp < spawnProtectionUntil;
+    const shieldAlpha = 0.58 + (Math.sin(timestamp * 0.012) + 1) * 0.12;
     snake.forEach((segment, index) => {
         const isHead = index === 0;
         const priorSegment = previousSnake[index] || segment;
         const x = (priorSegment.x + (segment.x - priorSegment.x) * progress) * GRID_SIZE;
         const y = (priorSegment.y + (segment.y - priorSegment.y) * progress) * GRID_SIZE;
-        ctx.globalAlpha = index >= previousSnake.length ? Math.min(1, progress * 2) : 1;
+        ctx.globalAlpha = (index >= previousSnake.length ? Math.min(1, progress * 2) : 1) * (protectedSpawn ? shieldAlpha : 1);
         ctx.fillStyle = isHead ? head : body;
-        ctx.shadowColor = accent;
-        ctx.shadowBlur = timestamp < snakeGlowUntil ? (isHead ? 28 : 16) : (isHead ? 16 : 8);
+        ctx.shadowColor = protectedSpawn ? '#b5f4ff' : accent;
+        ctx.shadowBlur = protectedSpawn ? (isHead ? 30 : 18) : (timestamp < snakeGlowUntil ? (isHead ? 28 : 16) : (isHead ? 16 : 8));
         ctx.beginPath();
         ctx.roundRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2, 6);
         ctx.fill();
@@ -654,45 +759,128 @@ function updateUI() {
 function gameOver() {
     isGameRunning = false;
     if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    isPaused = false;
+    isRespawning = false;
+    pauseScreen.classList.add('hidden');
+    respawnScreen.classList.add('hidden');
     finalScoreEl.textContent = score;
     finalLengthEl.textContent = snake.length;
-    finalLevelEl.textContent = level;
+    const planetName = PLANETS[currentPlanetIndex()].name;
+    finalPlanetEl.textContent = `${planetName[0]}${planetName.slice(1).toLowerCase()}`;
     finalHighScoreEl.textContent = highScore;
+    const boardBounds = canvas.getBoundingClientRect();
+    deathParticles.style.left = `${boardBounds.left + ((snake[0].x + 0.5) / TILE_COUNT) * boardBounds.width}px`;
+    deathParticles.style.top = `${boardBounds.top + ((snake[0].y + 0.5) / TILE_COUNT) * boardBounds.height}px`;
     if (achievedHighScore) newHighScoreMsg.classList.remove('hidden');
     else newHighScoreMsg.classList.add('hidden');
     gameOverScreen.classList.remove('hidden');
+    restartBtn.focus();
 }
 
 function togglePause() {
     if (!isGameRunning) return;
-    isPaused = !isPaused;
-    if (isPaused) pauseScreen.classList.remove('hidden');
-    else pauseScreen.classList.add('hidden');
-    headerPauseBtn.setAttribute('aria-label', isPaused ? 'Resume game' : 'Pause game');
-    headerPauseBtn.title = isPaused ? 'Resume game (P)' : 'Pause game (P)';
+    if (!isPaused) {
+        isPaused = true;
+        pauseStartedAt = performance.now();
+        if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+        document.querySelector('.game-container').classList.add('game-paused');
+        headerPauseBtn.setAttribute('aria-label', 'Resume game');
+        headerPauseBtn.title = 'Resume game (Esc)';
+        respawnScreen.classList.add('hidden');
+        pauseScreen.classList.remove('hidden');
+        resumeBtn.focus();
+        return;
+    }
+
+    isPaused = false;
+    if (pauseStartedAt !== null) pausedDuration += performance.now() - pauseStartedAt;
+    pauseStartedAt = null;
+    document.querySelector('.game-container').classList.remove('game-paused');
+    headerPauseBtn.setAttribute('aria-label', 'Open pause menu');
+    headerPauseBtn.title = 'Open pause menu (Esc)';
+    pauseScreen.classList.add('hidden');
+    if (isRespawning) respawnScreen.classList.remove('hidden');
+    headerPauseBtn.focus();
+    runGameLoop();
 }
 
-function showToast(message, duration = 900) {
+function updateRespawnCountdown(timestamp) {
+    if (respawnStartedAt === null) respawnStartedAt = timestamp;
+    const elapsed = timestamp - respawnStartedAt;
+    if (elapsed < 1000) respawnCounter.textContent = '3';
+    else if (elapsed < 2000) respawnCounter.textContent = '2';
+    else if (elapsed < 3000) respawnCounter.textContent = '1';
+    else if (elapsed < 3600) {
+        respawnMessage.textContent = 'LAUNCH!';
+        respawnCounter.textContent = 'GO!';
+    } else {
+        isRespawning = false;
+        spawnProtectionUntil = timestamp + 2500;
+        respawnScreen.classList.add('hidden');
+    }
+}
+
+function respawnGame() {
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    gameOverScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    startScreen.classList.add('hidden');
+    resetGameVariables();
+    isGameRunning = true;
+    isPaused = false;
+    isRespawning = true;
+    respawnStartedAt = null;
+    respawnMessage.textContent = 'RESPAWNING...';
+    respawnCounter.textContent = '3';
+    respawnScreen.classList.remove('hidden');
+    drawGame();
+    runGameLoop();
+}
+
+function showToast(message, duration = 900, timestamp = performance.now() - pausedDuration) {
     toastBanner.textContent = message;
     toastBanner.classList.remove('hidden', 'toast-pop');
     void toastBanner.offsetWidth;
     toastBanner.classList.add('toast-pop');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => toastBanner.classList.add('hidden'), duration);
+    toastHideAt = timestamp + duration;
 }
 
 function handleKeyPress(event) {
+    if (!mainMenu.classList.contains('hidden') && !mainMenu.classList.contains('menu-leaving')) {
+        if (event.code === 'Escape' && !battleComingSoon.classList.contains('hidden')) {
+            event.preventDefault();
+            showMainMenu();
+            return;
+        }
+        if ((event.code === 'ArrowDown' || event.code === 'ArrowUp') && battleComingSoon.classList.contains('hidden')) {
+            event.preventDefault();
+            const modeButtons = [singlePlayerBtn, battleRoyaleBtn];
+            const currentIndex = modeButtons.indexOf(document.activeElement);
+            const direction = event.code === 'ArrowDown' ? 1 : -1;
+            modeButtons[(currentIndex + direction + modeButtons.length) % modeButtons.length].focus();
+            return;
+        }
+        return;
+    }
+    if (event.code === 'Escape') {
+        event.preventDefault();
+        if (!gameOverScreen.classList.contains('hidden')) return;
+        togglePause();
+        return;
+    }
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'KeyP'].includes(event.code)) event.preventDefault();
+    if (!gameOverScreen.classList.contains('hidden')) {
+        if (event.code === 'KeyR') respawnGame();
+        return;
+    }
     if (event.code === 'KeyP' || event.key === 'p' || event.key === 'P') {
         togglePause();
         return;
     }
-    if (!isGameRunning && (event.code === 'Space' || event.code === 'Enter')) {
-        if (!gameOverScreen.classList.contains('hidden')) restartGame();
-        else if (!startScreen.classList.contains('hidden')) startGame();
-        return;
-    }
-    if (!isGameRunning || isPaused || changeDirectionLock) return;
+    if (!isGameRunning || isPaused || isRespawning || changeDirectionLock) return;
     switch (event.code) {
         case 'ArrowUp':
         case 'KeyW':
@@ -720,15 +908,21 @@ function queueDirection(x, y) {
 }
 
 function setDirection(x, y) {
-    if (!isGameRunning || isPaused || changeDirectionLock) return;
+    if (!isGameRunning || isPaused || isRespawning || changeDirectionLock) return;
     if ((x !== 0 && dx === 0) || (y !== 0 && dy === 0)) queueDirection(x, y);
 }
 
 window.addEventListener('keydown', handleKeyPress);
+singlePlayerBtn.addEventListener('click', launchSinglePlayer);
+battleRoyaleBtn.addEventListener('click', showBattleRoyale);
+menuBackBtn.addEventListener('click', showMainMenu);
 headerPauseBtn.addEventListener('click', togglePause);
 startBtn.addEventListener('click', startGame);
 resumeBtn.addEventListener('click', togglePause);
-restartBtn.addEventListener('click', restartGame);
+pauseRestartBtn.addEventListener('click', restartGame);
+pauseMainMenuBtn.addEventListener('click', exitToMainMenu);
+restartBtn.addEventListener('click', respawnGame);
+gameOverMainMenuBtn.addEventListener('click', exitToMainMenu);
 btnUp.addEventListener('click', () => setDirection(0, -1));
 btnDown.addEventListener('click', () => setDirection(0, 1));
 btnLeft.addEventListener('click', () => setDirection(-1, 0));
