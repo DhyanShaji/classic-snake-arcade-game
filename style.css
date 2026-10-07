@@ -331,3 +331,949 @@ canvas {
         font-size: 0.85rem;
     }
 }
+
+/* Arcade refresh */
+:root {
+    color-scheme: dark;
+    --bg-color: #08120f;
+    --card-bg: #0d1915;
+    --card-border: #25372f;
+    --text-primary: #f1f6f1;
+    --text-secondary: #96a79c;
+    --accent-green: #a6f36b;
+    --accent-green-hover: #c1ff8b;
+    --accent-red: #ff786b;
+    --accent-yellow: #f0c96c;
+    --accent-blue: #8ad9c1;
+    --canvas-bg: #09130f;
+    --grid-line: #14231c;
+}
+
+body {
+    position: relative;
+    min-height: 100svh;
+    padding: 28px 18px;
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(87, 139, 90, 0.13), transparent 52%),
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 7px);
+}
+
+.game-container {
+    width: min(100%, 590px);
+    padding: 24px;
+    gap: 0;
+    background: linear-gradient(145deg, rgba(18, 34, 27, 0.98), rgba(10, 20, 16, 0.98));
+    border: 1px solid #263a30;
+    border-radius: 12px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.game-header {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.game-title,
+.retro-title {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+.badge-pro {
+    padding: 4px 7px;
+    border: 1px solid #435940;
+    border-radius: 4px;
+    color: var(--accent-green);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--card-border);
+    border-radius: 7px;
+    background: #14221b;
+    color: var(--text-primary);
+    font: 600 1rem 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+    border-color: #63824e;
+    background: #203327;
+}
+
+.icon-btn:active { transform: scale(0.95); }
+
+.stats-panel {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.stat-card {
+    min-width: 0;
+    min-height: 66px;
+    align-items: flex-start;
+    padding: 10px 9px;
+    border: 1px solid #263a30;
+    border-radius: 6px;
+    background: rgba(7, 17, 13, 0.74);
+}
+
+.stat-label {
+    margin-bottom: 5px;
+    color: #8fa197;
+    font-size: 0.58rem;
+    font-weight: 700;
+}
+
+.stat-value {
+    max-width: 100%;
+    overflow: hidden;
+    color: #e6eee8;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.03rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.highlight-score { color: var(--accent-green); }
+.difficulty-easy { color: var(--accent-green); }
+.difficulty-medium { color: #c8da75; }
+.difficulty-challenging { color: var(--accent-yellow); }
+.difficulty-hard { color: #f39c64; }
+.difficulty-expert { color: var(--accent-red); }
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    margin: 14px 1px 6px;
+    color: #8fa197;
+    font-size: 0.6rem;
+    font-weight: 700;
+}
+
+.progress-meta span:last-child { color: #c6d3ca; }
+
+.level-progress-container {
+    width: 100%;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #25372f;
+}
+
+.level-progress-fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-green);
+    box-shadow: 0 0 12px rgba(166, 243, 107, 0.45);
+    transition: width 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.canvas-wrapper {
+    width: min(100%, 520px);
+    height: auto;
+    aspect-ratio: 1;
+    border: 1px solid #344a3e;
+    border-radius: 8px;
+    background: var(--canvas-bg);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28), 0 0 0 5px rgba(28, 47, 36, 0.42);
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.overlay {
+    padding: 16px;
+    background: rgba(7, 16, 12, 0.82);
+    backdrop-filter: blur(7px);
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.overlay.hidden {
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.overlay-content {
+    max-width: 360px;
+    padding: 20px;
+    animation: arrive 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.eyebrow {
+    margin-bottom: 10px;
+    color: var(--accent-green);
+    font-size: 0.64rem;
+    font-weight: 700;
+}
+
+.retro-title {
+    margin-bottom: 8px;
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+}
+
+.subtitle {
+    margin-bottom: 20px;
+    color: #a4b3aa;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.instructions-box {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 13px 14px;
+    border: 1px solid #31463a;
+    border-radius: 6px;
+    background: rgba(12, 26, 19, 0.86);
+    color: var(--text-secondary);
+}
+
+.instruction-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.78rem;
+}
+
+.instruction-desc { color: #d7e2da; }
+.key-or { padding: 0 4px; color: #7f9185; }
+
+.key-badge {
+    display: inline-block;
+    padding: 3px 6px;
+    border: 1px solid #3c5145;
+    border-radius: 4px;
+    background: #18271e;
+    color: #e1ebe3;
+    font-size: 0.67rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn {
+    min-height: 46px;
+    padding: 0 18px;
+    border: 1px solid #b7f28e;
+    border-radius: 5px;
+    background: var(--accent-green);
+    color: #14200f;
+    font: 700 0.79rem 'Outfit', sans-serif;
+    box-shadow: 0 5px 18px rgba(128, 203, 82, 0.16);
+    transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background: var(--accent-green-hover);
+    box-shadow: 0 7px 22px rgba(128, 203, 82, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn:active { transform: translateY(1px); }
+.btn-glow { animation: button-in 500ms 100ms both; }
+.pause-title { color: var(--accent-yellow); }
+.gameover-title { color: #ff887c; }
+
+.gameover-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 16px 0 20px;
+}
+
+.go-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid #304238;
+    border-radius: 5px;
+    background: rgba(15, 29, 21, 0.8);
+}
+
+.go-label { color: #8fa197; font-size: 0.58rem; font-weight: 700; }
+.go-value { color: #eff5ef; font: 700 1.2rem 'Space Grotesk', sans-serif; }
+.go-value.highlight { color: var(--accent-green); font-size: 1.2rem; }
+
+.new-highscore {
+    margin: 12px 0;
+    color: var(--accent-yellow);
+    font-size: 0.75rem;
+    font-weight: 700;
+    animation: record-shine 850ms ease-in-out infinite alternate;
+}
+
+.restart-hint { margin-top: 11px; color: #94a49a; font-size: 0.69rem; }
+.restart-hint .key-badge { margin: 0 3px; }
+
+.toast-banner {
+    position: absolute;
+    z-index: 5;
+    top: 12px;
+    left: 50%;
+    padding: 8px 12px;
+    border: 1px solid #60834a;
+    border-radius: 4px;
+    background: rgba(14, 30, 19, 0.94);
+    color: var(--accent-green);
+    font-size: 0.68rem;
+    font-weight: 700;
+    opacity: 1;
+    transform: translateX(-50%);
+}
+
+.toast-banner.hidden { display: none; }
+.toast-pop { animation: toast-in 200ms ease-out both; }
+.record-pop { animation: record-pop 480ms ease-out; }
+
+.controls-panel {
+    margin-top: 20px;
+    gap: 7px;
+}
+
+.dpad { gap: 5px; margin-bottom: 0; }
+.dpad-middle { gap: 5px; }
+
+.dpad-btn {
+    width: 39px;
+    height: 35px;
+    border: 1px solid #34483c;
+    border-radius: 5px;
+    background: #17251d;
+    color: #e0eae2;
+    font-size: 0.78rem;
+    touch-action: manipulation;
+}
+
+.dpad-btn:hover,
+.dpad-btn:focus-visible { background: #263b2d; }
+.dpad-btn:active { background: #34533a; }
+.dpad-center { color: var(--accent-green); }
+
+.controls-hint {
+    color: #819389;
+    font-size: 0.59rem;
+    font-weight: 600;
+}
+
+.controls-hint span { padding: 0 4px; color: #52665a; }
+
+button:focus-visible {
+    outline: 2px solid #d7ffb8;
+    outline-offset: 3px;
+}
+
+@keyframes arrive {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes button-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translate(-50%, -5px) scale(0.96); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes record-pop {
+    50% { color: #efffcf; transform: scale(1.24); }
+}
+
+@keyframes record-shine {
+    to { text-shadow: 0 0 16px rgba(240, 201, 108, 0.65); }
+}
+
+@media (max-width: 520px) {
+    body { padding: 12px; }
+    .game-container { padding: 16px 12px; }
+    .header-top { margin-bottom: 14px; }
+    .game-title { font-size: 1.2rem; }
+    .stats-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .stat-card { min-height: 58px; padding: 8px; }
+    .stat-label { font-size: 0.55rem; }
+    .stat-value { font-size: 0.96rem; }
+    .stat-card:last-child { grid-column: span 1; }
+    .canvas-wrapper { width: 100%; }
+    .overlay-content { padding: 12px; }
+}
+
+@media (max-width: 360px) {
+    body { padding: 8px; }
+    .game-container { padding: 13px 9px; }
+    .stat-card { padding: 7px 5px; }
+    .stat-label { font-size: 0.5rem; }
+    .stat-value { font-size: 0.88rem; }
+    .instruction-row { font-size: 0.7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@property --cosmic-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #79e7ff;
+}
+
+:root {
+    --cosmic-accent: #79e7ff;
+    --nebula-opacity: 0.12;
+    --bg-color: #070817;
+    --card-bg: #0d1021;
+    --card-border: #30344f;
+    --text-primary: #f4f3ff;
+    --text-secondary: #a4a8c2;
+    --accent-green: var(--cosmic-accent);
+    --accent-green-hover: #d5f8ff;
+    --accent-red: #ff82c8;
+    --accent-yellow: #c7a6ff;
+    --accent-blue: #83baff;
+    --canvas-bg: #050713;
+    --grid-line: #11152a;
+    transition: --cosmic-accent 900ms ease;
+}
+
+body {
+    isolation: isolate;
+    background-color: #070817;
+    background-image:
+        radial-gradient(1px 1px at 12% 19%, rgba(222, 231, 255, 0.8) 0 50%, transparent 100%),
+        radial-gradient(1px 1px at 72% 36%, rgba(174, 190, 255, 0.72) 0 50%, transparent 100%),
+        radial-gradient(1px 1px at 87% 78%, rgba(231, 207, 255, 0.75) 0 50%, transparent 100%),
+        radial-gradient(ellipse at 50% 0%, rgba(74, 59, 158, 0.16), transparent 53%);
+}
+
+body::before {
+    position: fixed;
+    z-index: 0;
+    inset: -24%;
+    background:
+        radial-gradient(ellipse at 24% 38%, rgba(43, 91, 201, 0.23), transparent 42%),
+        radial-gradient(ellipse at 78% 65%, rgba(165, 49, 169, 0.2), transparent 40%),
+        radial-gradient(ellipse at 52% 8%, rgba(55, 66, 157, 0.18), transparent 46%);
+    content: '';
+    opacity: var(--nebula-opacity);
+    pointer-events: none;
+    animation: nebula-drift 34s ease-in-out infinite alternate;
+    transition: opacity 900ms ease;
+}
+
+.game-container {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(145deg, rgba(17, 19, 42, 0.96), rgba(8, 9, 24, 0.97));
+    border-color: #343657;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.56), 0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 0 70px rgba(73, 77, 184, 0.11);
+}
+
+.game-title { color: #e4e5ff; }
+.badge-pro { border-color: #52618b; color: var(--cosmic-accent); }
+
+.stat-card {
+    border-color: #30334f;
+    background: rgba(7, 9, 25, 0.78);
+}
+
+.stat-label,
+.progress-meta { color: #9298b6; }
+.stat-value { color: #ececff; }
+.difficulty-easy { color: #83e8ff; }
+.difficulty-medium { color: #9fb8ff; }
+.difficulty-challenging { color: #c1a0ff; }
+.difficulty-hard { color: #ed91e4; }
+.difficulty-expert { color: #ff83b9; }
+
+.level-progress-container { background: #292b49; }
+.level-progress-fill { box-shadow: 0 0 14px color-mix(in srgb, var(--cosmic-accent), transparent 40%); }
+
+.canvas-wrapper {
+    border-color: #464a75;
+    background: var(--canvas-bg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42), 0 0 0 5px rgba(58, 57, 111, 0.36),
+        0 0 38px rgba(101, 87, 214, 0.14);
+}
+
+.overlay { background: rgba(6, 7, 20, 0.83); }
+.eyebrow { color: var(--cosmic-accent); }
+.subtitle { color: #a8aac8; }
+
+.instructions-box {
+    border-color: #393a5c;
+    background: rgba(15, 17, 39, 0.88);
+}
+
+.instruction-desc { color: #e0e1f5; }
+.key-or { color: #8589a8; }
+
+.key-badge {
+    border-color: #4b4e73;
+    background: #1a1c3b;
+    color: #ebebff;
+}
+
+.btn {
+    border-color: color-mix(in srgb, var(--cosmic-accent), white 18%);
+    background: var(--cosmic-accent);
+    color: #101326;
+    box-shadow: 0 5px 22px color-mix(in srgb, var(--cosmic-accent), transparent 82%);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background: #d5f8ff;
+    box-shadow: 0 7px 25px color-mix(in srgb, var(--cosmic-accent), transparent 70%);
+}
+
+.pause-title { color: #d5b5ff; }
+.gameover-title { color: #ff91cf; }
+
+.go-stat {
+    border-color: #383a5c;
+    background: rgba(16, 17, 39, 0.86);
+}
+
+.go-label,
+.restart-hint { color: #979ab8; }
+.go-value { color: #f1f0ff; }
+.new-highscore { color: #f1c9ff; }
+
+.toast-banner {
+    border-color: #6760a8;
+    background: rgba(15, 14, 38, 0.96);
+    color: var(--cosmic-accent);
+}
+
+.dpad-btn {
+    border-color: #424568;
+    background: #1b1d39;
+    color: #e3e5ff;
+}
+
+.dpad-btn:hover,
+.dpad-btn:focus-visible { background: #2a2d54; }
+.dpad-btn:active { background: #3b3e70; }
+.dpad-center { color: var(--cosmic-accent); }
+.controls-hint { color: #8f94b3; }
+.controls-hint span { color: #5e6383; }
+
+@keyframes nebula-drift {
+    from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+    to { transform: translate3d(1.5%, 1%, 0) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+}
+
+@property --planet-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #a9c8ff;
+}
+
+@property --planet-atmosphere {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #253d84;
+}
+
+:root {
+    --planet-accent: #a9c8ff;
+    --planet-atmosphere: #253d84;
+    --cosmic-accent: var(--planet-accent);
+    --bg-color: #070b19;
+    --card-bg: #0c1121;
+    --card-border: #2e3c5b;
+    --text-primary: #edf4ff;
+    --text-secondary: #9daec8;
+    --accent-green: var(--planet-accent);
+    --accent-green-hover: #e6f3ff;
+    --accent-red: #ff9d76;
+    --accent-yellow: #ffd08a;
+    --accent-blue: #70f0df;
+    --canvas-bg: #050713;
+    --grid-line: #15203a;
+    transition: --planet-accent 900ms ease, --planet-atmosphere 900ms ease;
+}
+
+body {
+    isolation: isolate;
+    background-color: #070b19;
+    background-image:
+        radial-gradient(1px 1px at 12% 19%, rgba(236, 244, 255, 0.84) 0 50%, transparent 100%),
+        radial-gradient(1px 1px at 72% 36%, rgba(180, 205, 255, 0.76) 0 50%, transparent 100%),
+        radial-gradient(1px 1px at 87% 78%, rgba(255, 232, 194, 0.75) 0 50%, transparent 100%),
+        radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--planet-atmosphere), transparent 76%), transparent 55%);
+}
+
+body::before {
+    background:
+        radial-gradient(ellipse at 24% 38%, color-mix(in srgb, var(--planet-atmosphere), transparent 74%), transparent 42%),
+        radial-gradient(ellipse at 78% 65%, color-mix(in srgb, var(--planet-accent), transparent 84%), transparent 40%),
+        radial-gradient(ellipse at 52% 8%, rgba(68, 97, 166, 0.13), transparent 46%);
+    transition: opacity 900ms ease, background 900ms ease;
+}
+
+.game-container {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(7, 11, 25, 0.97));
+    border-color: #344565;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.56), 0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 0 70px color-mix(in srgb, var(--planet-atmosphere), transparent 86%);
+}
+
+.game-title { color: #edf4ff; }
+.badge-pro { border-color: #52658c; color: var(--planet-accent); }
+
+.stat-card {
+    border-color: #2e3c5b;
+    background: rgba(6, 12, 28, 0.78);
+}
+
+.stat-label,
+.progress-meta { color: #95a8c5; }
+.stat-value { color: #edf4ff; }
+.planet-name { color: var(--planet-accent); }
+.highlight-score,
+.dpad-center { color: var(--planet-accent); }
+.difficulty-space { color: #aecbff; }
+.difficulty-earth { color: #70f0df; }
+.difficulty-mars { color: #ff9d76; }
+.difficulty-jupiter { color: #ffd08a; }
+.difficulty-saturn { color: #ffeb9b; }
+.difficulty-uranus { color: #a9fbff; }
+.difficulty-neptune { color: #a9c7ff; }
+
+.planet-route-wrap { width: 100%; margin-top: 14px; }
+.route-caption { margin-bottom: 6px; color: #889bbc; font-size: 0.56rem; font-weight: 700; }
+
+.planet-route {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: start;
+    width: 100%;
+    padding-top: 1px;
+}
+
+.planet-route::before {
+    position: absolute;
+    top: 8px;
+    right: 7%;
+    left: 7%;
+    height: 1px;
+    background: linear-gradient(90deg, #c78c4d, #4275b2, #bf5946, #c28d50, #ddbe67, #62cad0, #477ce0);
+    content: '';
+    opacity: 0.52;
+}
+
+.planet-step {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    color: #687b9c;
+    font-size: 0.49rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: color 350ms ease, transform 350ms ease, opacity 350ms ease;
+}
+
+.planet-symbol {
+    display: grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    border: 1px solid #405071;
+    border-radius: 50%;
+    background: #10182c;
+    color: #8798b7;
+    font-size: 0.72rem;
+    line-height: 1;
+    transition: color 350ms ease, border-color 350ms ease, box-shadow 350ms ease, transform 350ms ease;
+}
+
+.planet-step.visited { color: #b2c2db; }
+.planet-step.visited .planet-symbol { border-color: #7b8eb1; color: #e2edff; }
+.planet-step.active { color: #f2f6ff; transform: translateY(-1px); }
+.planet-step.active .planet-symbol {
+    border-color: var(--planet-accent);
+    background: color-mix(in srgb, var(--planet-accent), #11182b 68%);
+    color: #fff;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--planet-accent), transparent 48%);
+    transform: scale(1.13);
+}
+
+.level-progress-container { background: #263450; }
+.level-progress-fill {
+    background: var(--planet-accent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--planet-accent), transparent 40%);
+    transition: width 420ms cubic-bezier(0.2, 0.7, 0.2, 1), background-color 900ms ease;
+}
+
+.canvas-wrapper {
+    border-color: #405477;
+    background: var(--canvas-bg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42), 0 0 0 5px rgba(51, 71, 110, 0.33),
+        0 0 38px color-mix(in srgb, var(--planet-atmosphere), transparent 78%);
+}
+
+.overlay { background: rgba(5, 8, 19, 0.84); }
+.eyebrow { color: var(--planet-accent); }
+.subtitle { color: #a8b6cd; }
+.instructions-box { border-color: #394968; background: rgba(13, 20, 39, 0.9); }
+.instruction-desc { color: #e1eaff; }
+.key-or { color: #8799b5; }
+.key-badge { border-color: #4a5e80; background: #18243b; color: #edf4ff; }
+
+.btn {
+    border-color: color-mix(in srgb, var(--planet-accent), white 18%);
+    background: var(--planet-accent);
+    color: #101727;
+    box-shadow: 0 5px 22px color-mix(in srgb, var(--planet-accent), transparent 82%);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background: #e6f3ff;
+    box-shadow: 0 7px 25px color-mix(in srgb, var(--planet-accent), transparent 70%);
+}
+
+.gameover-title { color: #ff9d8e; }
+.pause-title { color: #ffd98f; }
+.go-stat { border-color: #374765; background: rgba(12, 19, 37, 0.88); }
+.go-label,
+.restart-hint { color: #9baec9; }
+.go-value { color: #edf4ff; }
+.go-value.highlight { color: var(--planet-accent); }
+.new-highscore { color: #ffe59e; }
+.toast-banner { border-color: color-mix(in srgb, var(--planet-accent), #202c47 35%); background: rgba(9, 16, 34, 0.97); color: var(--planet-accent); }
+.dpad-btn { border-color: #405477; background: #17223a; color: #e3edff; }
+.dpad-btn:hover,
+.dpad-btn:focus-visible { background: #253655; }
+.dpad-btn:active { background: #334d78; }
+.controls-hint { color: #91a4c1; }
+.controls-hint span { color: #5e7395; }
+
+.score-pop { animation: score-pop 360ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@keyframes score-pop {
+    50% { color: #fff; transform: scale(1.22); }
+}
+
+@media (max-width: 520px) {
+    .planet-step { font-size: 0.43rem; }
+    .planet-symbol { width: 16px; height: 16px; }
+}
+
+@media (max-width: 360px) {
+    .planet-step-name { display: none; }
+    .planet-step { gap: 0; }
+    .planet-route::before { top: 8px; }
+}
+
+@property --orb-main {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: #20c9ac;
+}
+
+@property --orb-light {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: #cafff5;
+}
+
+@property --orb-shadow {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: #075d83;
+}
+
+.header-actions { align-items: center; gap: 11px; }
+.stats-panel { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.planet-route { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+.planet-indicator {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 116px;
+    padding: 5px 9px 5px 5px;
+    border: 1px solid color-mix(in srgb, var(--planet-accent), #344565 74%);
+    border-radius: 7px;
+    background: linear-gradient(135deg, rgba(17, 27, 48, 0.94), rgba(8, 13, 29, 0.96));
+    box-shadow: 0 0 20px color-mix(in srgb, var(--planet-atmosphere), transparent 85%), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    transition: border-color 900ms ease, box-shadow 900ms ease;
+}
+
+.planet-visual {
+    position: relative;
+    z-index: 0;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    overflow: visible;
+    border: 1px solid rgba(230, 244, 255, 0.7);
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, var(--orb-light) 0, var(--orb-main) 38%, var(--orb-shadow) 82%);
+    box-shadow: inset -5px -4px 8px rgba(0, 0, 0, 0.48), inset 2px 2px 4px rgba(255, 255, 255, 0.56),
+        0 0 14px color-mix(in srgb, var(--planet-accent), transparent 44%);
+    transition: --orb-main 1100ms ease, --orb-light 1100ms ease, --orb-shadow 1100ms ease, box-shadow 900ms ease;
+}
+
+.planet-visual::before,
+.planet-visual::after {
+    position: absolute;
+    content: '';
+    pointer-events: none;
+}
+
+.planet-visual::before { inset: 0; border-radius: inherit; }
+.planet-earth { --orb-main: #28bda3; --orb-light: #bdfff1; --orb-shadow: #075281; }
+.planet-earth::before {
+    inset: 9px 13px 11px 5px;
+    border-radius: 48% 32% 56% 35%;
+    background: rgba(120, 224, 133, 0.94);
+    box-shadow: 11px 10px 0 -2px rgba(131, 228, 154, 0.76);
+    transform: rotate(-25deg);
+}
+
+.planet-mars { --orb-main: #e85a32; --orb-light: #ffd19a; --orb-shadow: #70201b; }
+.planet-mars::before {
+    background: radial-gradient(circle at 34% 35%, rgba(100, 34, 28, 0.64) 0 2px, transparent 2.6px),
+        radial-gradient(circle at 68% 62%, rgba(103, 32, 25, 0.58) 0 3px, transparent 3.5px),
+        radial-gradient(circle at 57% 24%, rgba(255, 210, 153, 0.5) 0 1px, transparent 1.7px);
+}
+
+.planet-jupiter { --orb-main: #c77a3d; --orb-light: #ffe0a3; --orb-shadow: #59301f; }
+.planet-jupiter::before {
+    inset: 7px 0;
+    border-radius: 50%;
+    background: repeating-linear-gradient(0deg, transparent 0 4px, rgba(93, 46, 30, 0.53) 4px 6px, rgba(255, 212, 157, 0.54) 6px 8px);
+    transform: rotate(-15deg);
+}
+.planet-jupiter::after { top: 22px; left: 24px; width: 7px; height: 4px; border-radius: 50%; background: #b84936; }
+
+.planet-saturn { --orb-main: #d7ad45; --orb-light: #fff2ae; --orb-shadow: #705124; }
+.planet-saturn::after {
+    z-index: -1;
+    top: 10px;
+    left: -8px;
+    width: 52px;
+    height: 17px;
+    border: 3px solid rgba(255, 222, 133, 0.88);
+    border-radius: 50%;
+    box-shadow: 0 0 7px rgba(255, 220, 127, 0.36);
+    transform: rotate(-24deg);
+}
+
+.planet-uranus { --orb-main: #57cbd0; --orb-light: #d6ffff; --orb-shadow: #126078; }
+.planet-uranus::after {
+    z-index: -1;
+    top: 12px;
+    left: -5px;
+    width: 46px;
+    height: 13px;
+    border: 2px solid rgba(178, 249, 255, 0.72);
+    border-radius: 50%;
+    transform: rotate(74deg);
+}
+
+.planet-neptune { --orb-main: #356fea; --orb-light: #c5e4ff; --orb-shadow: #102658; }
+.planet-neptune::before {
+    inset: 13px 7px 9px 18px;
+    border-radius: 50%;
+    background: rgba(20, 47, 118, 0.78);
+    transform: rotate(-22deg);
+}
+
+.planet-indicator-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.planet-indicator-name { color: #f1f6ff; font: 700 0.69rem 'Space Grotesk', sans-serif; }
+.planet-indicator-difficulty { color: var(--planet-accent); font-size: 0.55rem; font-weight: 700; transition: color 900ms ease; }
+
+.planet-route-wrap { margin-top: 10px; }
+.planet-step { font-size: 0.54rem; }
+.planet-symbol { width: 18px; height: 18px; }
+
+.gameover-title { color: #ff9d8e; }
+.pause-title { color: #ffd98f; }
+.planet-arrive { animation: planet-arrive 520ms cubic-bezier(0.18, 0.8, 0.25, 1) both; }
+
+@keyframes planet-arrive {
+    0% { opacity: 0.45; transform: scale(0.82) rotate(-16deg); }
+    65% { opacity: 1; transform: scale(1.12) rotate(5deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@media (max-width: 520px) {
+    .stats-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .planet-indicator { min-width: 0; gap: 7px; padding-right: 7px; }
+    .planet-visual { flex-basis: 34px; width: 34px; height: 34px; }
+    .planet-saturn::after { left: -9px; width: 48px; }
+    .planet-uranus::after { left: -7px; width: 44px; }
+    .planet-step { font-size: 0.47rem; }
+}
+
+@media (max-width: 380px) {
+    .badge-pro { display: none; }
+    .game-title { font-size: 1.05rem; }
+    .header-actions { gap: 5px; }
+    .planet-visual { flex-basis: 31px; width: 31px; height: 31px; }
+    .planet-indicator-name { font-size: 0.62rem; }
+    .planet-indicator-difficulty { font-size: 0.5rem; }
+    .planet-step-name { display: none; }
+}

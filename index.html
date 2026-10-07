@@ -3,89 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classic Snake Game</title>
+    <meta name="theme-color" content="#070b19">
+    <meta name="description" content="Journey through the Solar System in a progressive arcade Snake game.">
+    <title>Solar Snake | Orbit Arcade</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts for modern retro arcade feel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="game-container">
-        <!-- Header / Stats Panel -->
         <header class="game-header">
-            <h1 class="game-title">SNAKE</h1>
+            <div class="header-top">
+                <div class="brand">
+                    <h1 class="game-title">SOLAR SNAKE</h1>
+                    <span class="badge-pro">ORBIT ARCADE</span>
+                </div>
+                <div class="header-actions">
+                    <div id="planetIndicator" class="planet-indicator" aria-live="polite">
+                        <span id="planetVisual" class="planet-visual planet-earth" aria-hidden="true"></span>
+                        <span class="planet-indicator-copy"><span id="planetName" class="planet-indicator-name">EARTH</span><span id="planetDifficulty" class="planet-indicator-difficulty">EASY</span></span>
+                    </div>
+                    <button id="headerPauseBtn" class="icon-btn" title="Pause game (P)" aria-label="Pause game" type="button">Ⅱ</button>
+                </div>
+            </div>
+
             <div class="stats-panel">
                 <div class="stat-card">
                     <span class="stat-label">SCORE</span>
-                    <span id="score" class="stat-value">0</span>
+                    <span id="score" class="stat-value highlight-score" aria-live="polite">0</span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-label">HIGH SCORE</span>
                     <span id="high-score" class="stat-value">0</span>
                 </div>
                 <div class="stat-card">
+                    <span class="stat-label">LENGTH</span>
+                    <span id="snakeLength" class="stat-value">3</span>
+                </div>
+                <div class="stat-card">
                     <span class="stat-label">LEVEL</span>
                     <span id="level" class="stat-value">1</span>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-label">DIFFICULTY</span>
-                    <span id="difficulty" class="stat-value difficulty-easy">Easy</span>
-                </div>
+            </div>
+
+            <div class="planet-route-wrap">
+                <div class="route-caption">SOLAR ROUTE</div>
+                <nav class="planet-route" aria-label="Planet progression">
+                    <span id="planet-step-0" class="planet-step active" aria-current="step"><span class="planet-symbol">◉</span><span class="planet-step-name">EARTH</span></span>
+                    <span id="planet-step-1" class="planet-step"><span class="planet-symbol">●</span><span class="planet-step-name">MARS</span></span>
+                    <span id="planet-step-2" class="planet-step"><span class="planet-symbol">◉</span><span class="planet-step-name">JUPITER</span></span>
+                    <span id="planet-step-3" class="planet-step"><span class="planet-symbol">◎</span><span class="planet-step-name">SATURN</span></span>
+                    <span id="planet-step-4" class="planet-step"><span class="planet-symbol">◉</span><span class="planet-step-name">URANUS</span></span>
+                    <span id="planet-step-5" class="planet-step"><span class="planet-symbol">●</span><span class="planet-step-name">NEPTUNE</span></span>
+                </nav>
+            </div>
+
+            <div class="progress-meta"><span>LEVEL PROGRESS</span><span id="nextLevelLabel">NEXT: 6</span></div>
+            <div class="level-progress-container" role="progressbar" aria-label="Progress to next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="levelProgressBar" class="level-progress-fill"></div>
             </div>
         </header>
 
-        <!-- Canvas and Overlays Wrapper -->
         <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <canvas id="gameCanvas" width="400" height="400" aria-label="Snake game board" role="img"></canvas>
 
-            <!-- Start Screen Overlay -->
+            <div id="toastBanner" class="toast-banner hidden" role="status" aria-live="polite">LEVEL UP!</div>
+
             <div id="startScreen" class="overlay">
                 <div class="overlay-content">
-                    <h2 class="retro-title">SNAKE</h2>
-                    <p class="subtitle">Classic Snake Game</p>
+                    <p class="eyebrow">ORBITAL ARCADE / 001</p>
+                    <h2 class="retro-title">SOLAR SNAKE</h2>
+                    <p class="subtitle">Collect cosmic energy. Journey planet by planet.</p>
+
                     <div class="instructions-box">
-                        <p>🎮 <strong>Arrow Keys / WASD</strong>: Move</p>
-                        <p>⏸️ <strong>P</strong>: Pause / Resume</p>
+                        <div class="instruction-row">
+                            <span class="instruction-desc">Move</span>
+                            <span><span class="key-badge">W A S D</span> <span class="key-or">or</span> <span class="key-badge">↑ ↓ ← →</span></span>
+                        </div>
+                        <div class="instruction-row">
+                            <span class="instruction-desc">Pause</span>
+                            <span class="key-badge">P</span>
+                        </div>
                     </div>
-                    <button id="startBtn" class="btn btn-primary">START GAME</button>
+
+                    <button id="startBtn" class="btn btn-primary btn-glow" type="button">START GAME <span aria-hidden="true">↗</span></button>
                 </div>
             </div>
 
-            <!-- Pause Screen Overlay -->
             <div id="pauseScreen" class="overlay hidden">
                 <div class="overlay-content">
                     <h2 class="retro-title pause-title">PAUSED</h2>
-                    <p class="subtitle">Press <strong>P</strong> to resume</p>
-                    <button id="resumeBtn" class="btn btn-secondary">RESUME</button>
+                    <p class="subtitle">Catch your breath. Your run is right where you left it.</p>
+                    <div class="pause-actions">
+                        <button id="resumeBtn" class="btn btn-primary" type="button">RESUME GAME</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Game Over Screen Overlay -->
             <div id="gameOverScreen" class="overlay hidden">
                 <div class="overlay-content">
+                    <p class="eyebrow">RUN COMPLETE</p>
                     <h2 class="retro-title gameover-title">GAME OVER</h2>
-                    <div class="gameover-stats">
-                        <p>Final Score: <span id="finalScore" class="highlight">0</span></p>
-                        <p id="newHighScoreMsg" class="new-highscore hidden">🎉 New High Score! 🎉</p>
+
+                    <div id="newHighScoreMsg" class="new-highscore hidden">
+                        NEW PERSONAL BEST
                     </div>
-                    <button id="restartBtn" class="btn btn-primary">RESTART</button>
+
+                    <div class="gameover-stats-grid">
+                        <div class="go-stat">
+                            <span class="go-label">FINAL SCORE</span>
+                            <span id="finalScore" class="go-value highlight">0</span>
+                        </div>
+                        <div class="go-stat">
+                            <span class="go-label">SNAKE LENGTH</span>
+                            <span id="finalLength" class="go-value">3</span>
+                        </div>
+                        <div class="go-stat">
+                            <span class="go-label">LEVEL REACHED</span>
+                            <span id="finalLevel" class="go-value">1</span>
+                        </div>
+                        <div class="go-stat">
+                            <span class="go-label">BEST HIGH SCORE</span>
+                            <span id="finalHighScore" class="go-value">0</span>
+                        </div>
+                    </div>
+
+                    <button id="restartBtn" class="btn btn-primary btn-glow" type="button">PLAY AGAIN <span aria-hidden="true">↗</span></button>
+                    <p class="restart-hint">Press <span class="key-badge">Space</span> or <span class="key-badge">Enter</span> to restart</p>
                 </div>
             </div>
         </div>
 
-        <!-- On-Screen Controls for Mobile / Convenience -->
         <div class="controls-panel">
             <div class="dpad">
-                <button id="btnUp" class="dpad-btn dpad-up" aria-label="Up">▲</button>
+                <button id="btnUp" class="dpad-btn dpad-up" aria-label="Move up" type="button">▲</button>
                 <div class="dpad-middle">
-                    <button id="btnLeft" class="dpad-btn dpad-left" aria-label="Left">◀</button>
-                    <button id="btnPause" class="dpad-btn dpad-center" aria-label="Pause">⏸</button>
-                    <button id="btnRight" class="dpad-btn dpad-right" aria-label="Right">▶</button>
+                    <button id="btnLeft" class="dpad-btn dpad-left" aria-label="Move left" type="button">◀</button>
+                    <button id="btnPause" class="dpad-btn dpad-center" aria-label="Pause or resume" type="button">Ⅱ</button>
+                    <button id="btnRight" class="dpad-btn dpad-right" aria-label="Move right" type="button">▶</button>
                 </div>
-                <button id="btnDown" class="dpad-btn dpad-down" aria-label="Down">▼</button>
+                <button id="btnDown" class="dpad-btn dpad-down" aria-label="Move down" type="button">▼</button>
             </div>
-            <p class="controls-hint">Use Arrow keys or WASD to navigate. Press P to Pause.</p>
+                    <p class="controls-hint">ARROWS / WASD <span>·</span> P TO PAUSE <span>·</span> EXPLORE THE SOLAR SYSTEM</p>
         </div>
     </div>
 

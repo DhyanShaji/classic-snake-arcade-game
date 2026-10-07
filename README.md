@@ -1,18 +1,22 @@
-# Classic Snake Game
+# Solar System Snake
 
-A feature-rich, polished, and fully playable **Snake Game** built using HTML5, CSS3, and Vanilla JavaScript. Designed with a clean retro-modern arcade aesthetic, smooth rendering on an HTML5 Canvas, responsive controls, and persistent high scores.
+A polished Solar System arcade game built with HTML5 Canvas, CSS, and vanilla JavaScript. Guide your growing snake from Earth through six distinct planetary environments with responsive controls, persistent high scores, and a difficulty curve tied to progress.
 
 ---
 
 ## 🎮 Features
 
-- **Smooth Arcade Gameplay**: Continuous snake movement with rounded segment graphics and animated eyes on the snake's head.
-- **Dynamic Difficulty System**: Speed increases as your score increases (Easy, Medium, Hard, Expert).
+- **Solar System Journey**: Progress from EARTH through MARS, JUPITER, SATURN, URANUS, and NEPTUNE, each with recognizable Canvas-rendered details and a dedicated difficulty.
+- **Planet Transitions**: Smooth 1.5-second arrival fades, planet messages, destination-matched snake colors, and a corner planet indicator.
+- **Layered Starfield**: Twinkling parallax stars and drifting particles become denser as the journey advances.
+- **Cosmic Energy Orbs**: Planet-colored pickups pulse and burst into particles when collected.
+- **Smooth Arcade Gameplay**: Interpolated movement with responsive keyboard or touch controls.
+- **Progressive Difficulty**: Starts at 210 ms per move and speeds up gradually with snake length, capped at 80 ms to keep later levels playable.
 - **Score & High Score Tracking**: Persistent high scores saved locally via browser `localStorage`.
-- **Level Progression**: Leveling up every 50 points.
+- **Level Progression**: Earth is level 1; each destination advances one level every five segments, ending at expert level 6.
 - **Pause & Resume**: Press `P` or use the pause button anytime to pause or resume the game.
-- **Game Over Screen**: Displays your final score with high-score celebration notifications and a quick Restart button.
-- **Responsive Controls**: Supports both **Arrow Keys**, **WASD**, and on-screen **D-pad** buttons for mobile/touch users.
+- **Game Over Screen**: Displays score, length, level, and high score, with a new-record celebration and quick restart.
+- **Responsive Controls**: Supports **Arrow Keys**, **WASD**, and on-screen **D-pad** buttons for touch users.
 - **Collision Detection**: Accurate detection for wall hits and self-collisions.
 
 ---
@@ -51,14 +55,7 @@ A feature-rich, polished, and fully playable **Snake Game** built using HTML5, C
 
 ## 📜 Game Rules
 
-1. **Eat Food**: Guide the snake to eat red food pellets to grow longer and increase your score (+10 points per food).
+1. **Collect Energy**: Guide the snake to collect glowing cosmic orbs to grow longer and increase your score (+10 points per pickup).
 2. **Avoid Collisions**: The game ends if the snake hits the outer walls or runs into its own body.
-3. **Speed Up**: As your score crosses thresholds (50, 100, 180 points), the game speed increases, testing your reflexes!
-
----
-
-## 🔮 Future Improvements
-
-- Add sound effects (eat food, game over, level up) using Web Audio API.
-- Add collectible power-ups (speed boost, extra points, slow down).
-- Add custom theme color selector.
+3. **Explore the Solar System**: Earth is the starting world; every five segments takes you to the next planetary destination.
+4. **Level Up**: Movement starts at 210 ms per tile and gradually gets faster with growth, with an 80 ms minimum interval cap.
