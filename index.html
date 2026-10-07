@@ -12,6 +12,51 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <main id="mainMenu" class="main-menu" aria-label="Solar Snake main menu">
+        <div class="menu-stars" aria-hidden="true"></div>
+        <div class="menu-particles" aria-hidden="true"></div>
+        <div class="menu-nebula" aria-hidden="true"></div>
+        <div class="menu-planet menu-planet-distant" aria-hidden="true"></div>
+        <div class="menu-planet menu-planet-hero" aria-hidden="true"><span></span></div>
+        <div class="menu-orbit menu-orbit-one" aria-hidden="true"></div>
+        <div class="menu-orbit menu-orbit-two" aria-hidden="true"></div>
+
+        <section id="menuHome" class="menu-content" aria-labelledby="menuTitle">
+            <div class="menu-mark" aria-hidden="true"><span>✦</span></div>
+            <p class="menu-kicker">A COSMIC ARCADE ADVENTURE</p>
+            <h1 id="menuTitle" class="menu-title">SOLAR <span>SNAKE</span></h1>
+            <p class="menu-subtitle">CONQUER THE SOLAR SYSTEM</p>
+            <div class="menu-divider" aria-hidden="true"><span></span></div>
+
+            <div class="mode-options" aria-label="Choose a game mode">
+                <button id="singlePlayerBtn" class="mode-button mode-single" type="button">
+                    <span class="mode-icon" aria-hidden="true">🐍</span>
+                    <span class="mode-copy"><span class="mode-name">SINGLE PLAYER</span><span class="mode-description">Explore the Solar System</span></span>
+                    <span class="mode-arrow" aria-hidden="true">↗</span>
+                </button>
+                <button id="battleRoyaleBtn" class="mode-button mode-battle" type="button">
+                    <span class="mode-icon" aria-hidden="true">⚔</span>
+                    <span class="mode-copy"><span class="mode-name">BATTLE ROYALE</span><span class="mode-description">Be the Last Snake Standing</span></span>
+                    <span class="mode-arrow" aria-hidden="true">↗</span>
+                </button>
+            </div>
+
+            <p class="menu-footnote"><span class="status-dot" aria-hidden="true"></span> SIX WORLDS. ONE INTERSTELLAR JOURNEY.</p>
+        </section>
+
+        <section id="battleComingSoon" class="menu-content coming-soon hidden" aria-labelledby="comingSoonTitle" aria-live="polite">
+            <p class="menu-kicker">NEW GAME MODE</p>
+            <div class="battle-emblem" aria-hidden="true">⚔</div>
+            <h2 id="comingSoonTitle" class="coming-title">BATTLE<br>ROYALE</h2>
+            <p class="coming-description">A new arena is taking shape beyond the stars.</p>
+            <span class="coming-badge">COMING SOON</span>
+            <button id="menuBackBtn" class="menu-back-button" type="button"><span aria-hidden="true">←</span> BACK TO MODES</button>
+        </section>
+
+        <span class="menu-coordinate menu-coordinate-left" aria-hidden="true">SOL SYSTEM / 01</span>
+        <span class="menu-coordinate menu-coordinate-right" aria-hidden="true">DEEP SPACE EDITION</span>
+    </main>
+
     <div class="game-container">
         <header class="game-header">
             <div class="header-top">
@@ -24,7 +69,7 @@
                         <span id="planetVisual" class="planet-visual planet-earth" aria-hidden="true"></span>
                         <span class="planet-indicator-copy"><span id="planetName" class="planet-indicator-name">EARTH</span><span id="planetDifficulty" class="planet-indicator-difficulty">EASY</span></span>
                     </div>
-                    <button id="headerPauseBtn" class="icon-btn" title="Pause game (P)" aria-label="Pause game" type="button">Ⅱ</button>
+                    <button id="headerPauseBtn" class="icon-btn menu-trigger" title="Open pause menu (Esc)" aria-label="Open pause menu" type="button">☰ MENU</button>
                 </div>
             </div>
 
@@ -70,7 +115,7 @@
 
             <div id="toastBanner" class="toast-banner hidden" role="status" aria-live="polite">LEVEL UP!</div>
 
-            <div id="startScreen" class="overlay">
+            <div id="startScreen" class="overlay hidden">
                 <div class="overlay-content">
                     <p class="eyebrow">ORBITAL ARCADE / 001</p>
                     <h2 class="retro-title">SOLAR SNAKE</h2>
@@ -91,20 +136,25 @@
                 </div>
             </div>
 
-            <div id="pauseScreen" class="overlay hidden">
-                <div class="overlay-content">
-                    <h2 class="retro-title pause-title">PAUSED</h2>
-                    <p class="subtitle">Catch your breath. Your run is right where you left it.</p>
-                    <div class="pause-actions">
-                        <button id="resumeBtn" class="btn btn-primary" type="button">RESUME GAME</button>
+            <div id="pauseScreen" class="overlay pause-overlay hidden">
+                <div class="overlay-content system-panel">
+                    <p class="eyebrow">ORBITAL ARCADE / PAUSE</p>
+                    <h2 class="retro-title pause-title">GAME PAUSED</h2>
+                    <p class="subtitle">Solar Snake</p>
+                    <div class="system-actions">
+                        <button id="resumeBtn" class="btn btn-primary system-action" type="button"><span aria-hidden="true">▶</span> RESUME</button>
+                        <button id="pauseRestartBtn" class="btn system-action" type="button"><span aria-hidden="true">↻</span> RESTART</button>
+                        <button id="pauseMainMenuBtn" class="btn system-action system-action-quiet" type="button"><span aria-hidden="true">⌂</span> MAIN MENU</button>
                     </div>
                 </div>
             </div>
 
-            <div id="gameOverScreen" class="overlay hidden">
-                <div class="overlay-content">
+            <div id="gameOverScreen" class="overlay game-over-overlay hidden">
+                <span id="deathParticles" class="death-particles" aria-hidden="true"></span>
+                <div class="overlay-content system-panel death-panel">
                     <p class="eyebrow">RUN COMPLETE</p>
                     <h2 class="retro-title gameover-title">GAME OVER</h2>
+                    <p class="death-copy"><span aria-hidden="true">☠</span> YOUR SNAKE HAS BEEN LOST IN SPACE</p>
 
                     <div id="newHighScoreMsg" class="new-highscore hidden">
                         NEW PERSONAL BEST
@@ -116,12 +166,12 @@
                             <span id="finalScore" class="go-value highlight">0</span>
                         </div>
                         <div class="go-stat">
-                            <span class="go-label">SNAKE LENGTH</span>
-                            <span id="finalLength" class="go-value">3</span>
+                            <span class="go-label">PLANET REACHED</span>
+                            <span id="finalPlanet" class="go-value">Earth</span>
                         </div>
                         <div class="go-stat">
-                            <span class="go-label">LEVEL REACHED</span>
-                            <span id="finalLevel" class="go-value">1</span>
+                            <span class="go-label">LENGTH</span>
+                            <span id="finalLength" class="go-value">3</span>
                         </div>
                         <div class="go-stat">
                             <span class="go-label">BEST HIGH SCORE</span>
@@ -129,8 +179,18 @@
                         </div>
                     </div>
 
-                    <button id="restartBtn" class="btn btn-primary btn-glow" type="button">PLAY AGAIN <span aria-hidden="true">↗</span></button>
-                    <p class="restart-hint">Press <span class="key-badge">Space</span> or <span class="key-badge">Enter</span> to restart</p>
+                    <div class="system-actions system-actions-inline">
+                        <button id="restartBtn" class="btn btn-primary system-action" type="button"><span aria-hidden="true">↻</span> RESPAWN</button>
+                        <button id="gameOverMainMenuBtn" class="btn system-action system-action-quiet" type="button"><span aria-hidden="true">⌂</span> MAIN MENU</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="respawnScreen" class="overlay respawn-screen hidden" aria-live="assertive">
+                <div class="respawn-content">
+                    <p class="eyebrow">SAFE ORBIT RESTORED</p>
+                    <h2 id="respawnMessage" class="respawn-message">RESPAWNING...</h2>
+                    <span id="respawnCounter" class="respawn-counter">3</span>
                 </div>
             </div>
         </div>
